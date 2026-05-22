@@ -1,22 +1,22 @@
 CREATE TABLE system_audit_logs (
-                                   id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
 
-                                   user_id BIGINT,
+    user_id BIGINT,
 
-                                   action VARCHAR(100) NOT NULL,
+    action VARCHAR(100) NOT NULL,
 
-                                   entity_type VARCHAR(50),
+    entity_type VARCHAR(50),
 
-                                   entity_id BIGINT,
+    entity_id BIGINT,
 
-                                   old_value TEXT,
+    old_value TEXT,
 
-                                   new_value TEXT,
+    new_value TEXT,
 
-                                   ip_address VARCHAR(45),
+    ip_address VARCHAR(45),
 
-                                   performed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    performed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
-                                   FOREIGN KEY (user_id)
-                                       REFERENCES users(id)
+    FOREIGN KEY (user_id)
+        REFERENCES users(id)
 );
