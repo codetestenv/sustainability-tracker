@@ -10,5 +10,7 @@ spring:
     properties:
       hibernate:
         highlight_sql: true
-
+  jwt:
+    secret: thisIsMySecretKeyAndItShouldBeLongEnough123456
+    expiration: 86400000
 kind: Application
