@@ -1,5 +1,6 @@
 package com.sustainabilitytracker.sustainabilitytracker.entities;
 
+import com.sustainabilitytracker.sustainabilitytracker.enums.Role;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -35,7 +36,8 @@ public class User {
     private String password;
 
     @Column(name = "role")
-    private String role;
+    @Enumerated(EnumType.STRING)
+    private Role role;
 
     @ColumnDefault("1")
     @Column(name = "is_active")
