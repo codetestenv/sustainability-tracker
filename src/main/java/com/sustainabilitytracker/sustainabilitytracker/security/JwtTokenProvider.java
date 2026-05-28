@@ -3,6 +3,7 @@ package com.sustainabilitytracker.sustainabilitytracker.security;
 
 import com.sustainabilitytracker.sustainabilitytracker.config.JwtProperties;
 import com.sustainabilitytracker.sustainabilitytracker.entities.User;
+import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -32,5 +33,26 @@ public class JwtTokenProvider {
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + 1000 * tokenExpiration))
                 .compact();
+    }
+
+    public boolean isTokenValid(String token){
+        try {
+            var claims = getClaims(token);
+            return claims.getExpiration().before(new Date());
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    public String extractEmailFromToken(String token){
+        return getClaims(token).getSubject();
+    }
+
+    private Claims getClaims(String token) {
+        return Jwts.parser()
+                .verifyWith(jwtProperties.getSecretKey())
+                .build()
+                .parseSignedClaims(token)
+                .getPayload();
     }
 }
