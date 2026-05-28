@@ -13,6 +13,7 @@ import com.sustainabilitytracker.sustainabilitytracker.repositories.DepartmentRe
 import com.sustainabilitytracker.sustainabilitytracker.repositories.UserRepository;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -20,6 +21,7 @@ import org.springframework.stereotype.Service;
 public class AuthService {
     private final UserRepository userRepository;
     private final DepartmentRepository departmentRepository;
+    private final PasswordEncoder passwordEncoder;
     private final UserMapper userMapper;
 
     @Transactional
@@ -55,8 +57,7 @@ public class AuthService {
             throw new BadRequestException("Invalid role");
         }
 
-//        user.setPassword(passwordEncoder.encode(request.getPassword()));
-        user.setPassword(request.getPassword());
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
         User savedUser = userRepository.save(user);
 
         return userMapper.toResponse(savedUser);
