@@ -10,14 +10,18 @@ spring:
     properties:
       hibernate:
         highlight_sql: true
-  jwt:
-    secret: thisIsMySecretKeyAndItShouldBeLongEnough123456
-    expiration: 86400000 # 24hr
+        format_sql: true
+
   web:
     error:
       include-message: always
       include-stacktrace: never
       include-binding-errors: always
-#    accessTokenExpiration: 7200 # 300 # 3m
-#    refreshTokenExpiration: 604800 # 7d
+  jwt:
+    secret: thisIsMySecretKeyAndItShouldBeLongEnough123456
+    expiration: 86400000   # 24 hours
+
+    #    accessTokenExpiration: 7200 # 300 # 3m
+  #    refreshTokenExpiration: 604800 # 7d
+
 kind: Application
