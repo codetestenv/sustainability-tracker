@@ -1,5 +1,6 @@
 package com.sustainabilitytracker.sustainabilitytracker.dtos.response;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import lombok.Data;
 import java.time.Instant;
@@ -23,5 +24,6 @@ public class UserResponse {
     private String companyName;
     private String departmentName;
     private Boolean isActive;
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss", timezone = "UTC")
     private Instant createdAt;
 }
