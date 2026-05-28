@@ -5,6 +5,7 @@ import com.sustainabilitytracker.sustainabilitytracker.dtos.response.UserRespons
 import com.sustainabilitytracker.sustainabilitytracker.enums.Role;
 import com.sustainabilitytracker.sustainabilitytracker.mappers.UserMapper;
 import com.sustainabilitytracker.sustainabilitytracker.repositories.UserRepository;
+import com.sustainabilitytracker.sustainabilitytracker.services.AuthService;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -17,8 +18,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 @AllArgsConstructor
 @RequestMapping("/users")
 public class UserController {
-    private final UserRepository userRepository;
-    private final UserMapper userMapper;
+    private final AuthService authService;
 //    private final PasswordEncoder passwordEncoder;
 
     @GetMapping
@@ -31,16 +31,8 @@ public class UserController {
     public ResponseEntity<UserResponse> createUser(
             UriComponentsBuilder uriBuilder,
             @Valid @RequestBody RegisterUserRequest request){
-        if(userRepository.existsByEmail(request.getEmail())) return ResponseEntity.badRequest().build();
-        var user = userMapper.toEntity(request);
-        user.setRole(Role.ADMIN);
-        user.setPassword(user.getPassword());
-//        user.setPassword(passwordEncoder.encode(user.getPassword()));
-        userRepository.save(user);
-
-        var userResponse = userMapper.toResponse(user);
+        var userResponse = authService.create(request);
         var uri = uriBuilder.path("/users/{id}").buildAndExpand(userResponse.getId()).toUri();
-
         return ResponseEntity.created(uri).body(userResponse);
     }
 }
