@@ -19,8 +19,7 @@ spring:
       include-binding-errors: never
   jwt:
     secret: thisIsMySecretKeyAndItShouldBeLongEnough123456
-    expiration: 86400000   # 24 hours
-#    accessTokenExpiration: 7200 # 300 # 3m
-#    refreshTokenExpiration: 604800 # 7d
+    accessTokenExpiration: 7200 # 300 # 3m
+    refreshTokenExpiration: 604800 # 7d
 
 kind: Application
