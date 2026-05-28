@@ -61,5 +61,9 @@ public class User {
     @Column(name = "updated_at")
     private Instant updatedAt;
 
+    public void assignToDepartment(Department department) {
+        this.department = department;
+        this.company = department != null ? department.getCompany() : null;
+    }
 
 }
