@@ -16,7 +16,7 @@ spring:
     error:
       include-message: always
       include-stacktrace: never
-      include-binding-errors: always
+      include-binding-errors: never
   jwt:
     secret: thisIsMySecretKeyAndItShouldBeLongEnough123456
     expiration: 86400000   # 24 hours
