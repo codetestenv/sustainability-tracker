@@ -12,9 +12,8 @@ import javax.crypto.SecretKey;
 @ConfigurationProperties(prefix = "spring.jwt")
 public class JwtProperties {
     private String secret;
-    private long expiration;
-    private long accessTokenExpiration;
-    private long refreshTokenExpiration;
+    private int accessTokenExpiration;
+    private int refreshTokenExpiration;
 
     public SecretKey getSecretKey(){
         return Keys.hmacShaKeyFor(secret.getBytes());
