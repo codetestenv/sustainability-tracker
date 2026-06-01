@@ -1,11 +1,14 @@
 package com.sustainabilitytracker.sustainabilitytracker.entities;
 
+import com.sustainabilitytracker.sustainabilitytracker.enums.CompanySize;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.ColumnDefault;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 
 @Getter
 @Setter
@@ -30,10 +33,17 @@ public class Company {
     private String city;
 
     @Column(name = "size")
-    private String size;
+    @Enumerated(EnumType.STRING)
+    private CompanySize size;
 
     @Column(name = "email")
     private String email;
+
+    @OneToMany(mappedBy = "company")
+    List<Department> departments;
+
+    @OneToMany(mappedBy = "company")
+    private List<User> users = new ArrayList<>();
 
     @Column(name = "phone")
     private String phone;
