@@ -1,23 +1,20 @@
 package com.sustainabilitytracker.sustainabilitytracker.controllers;
 
 import com.sustainabilitytracker.sustainabilitytracker.config.JwtProperties;
+import com.sustainabilitytracker.sustainabilitytracker.dtos.request.ChangePasswordRequest;
 import com.sustainabilitytracker.sustainabilitytracker.dtos.request.LoginRequest;
 import com.sustainabilitytracker.sustainabilitytracker.dtos.response.JwtResponse;
-import com.sustainabilitytracker.sustainabilitytracker.entities.User;
 import com.sustainabilitytracker.sustainabilitytracker.repositories.UserRepository;
 import com.sustainabilitytracker.sustainabilitytracker.security.JwtTokenProvider;
+import com.sustainabilitytracker.sustainabilitytracker.services.AuthService;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
-import org.springframework.data.repository.Repository;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @AllArgsConstructor
@@ -28,6 +25,7 @@ public class AuthController {
     private final UserRepository userRepository;
     private final JwtTokenProvider jwtTokenProvider;
     private final JwtProperties jwtProperties;
+    private final AuthService authService;
 
     @PostMapping("/login")
     public ResponseEntity<JwtResponse> login(
@@ -52,5 +50,11 @@ public class AuthController {
         response.addCookie(cookie);
 
         return ResponseEntity.ok(new JwtResponse(accessToken));
+    }
+
+    @PostMapping("/change-password")
+    public ResponseEntity<Void> changePassword(@Valid @RequestBody ChangePasswordRequest request ) {
+        authService.changePassword(request);
+        return ResponseEntity.ok().build();
     }
 }
