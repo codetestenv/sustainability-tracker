@@ -1,5 +1,6 @@
 package com.sustainabilitytracker.sustainabilitytracker.services;
 
+import com.sustainabilitytracker.sustainabilitytracker.dtos.request.ChangePasswordRequest;
 import com.sustainabilitytracker.sustainabilitytracker.dtos.request.RegisterUserRequest;
 import com.sustainabilitytracker.sustainabilitytracker.dtos.response.UserResponse;
 import com.sustainabilitytracker.sustainabilitytracker.entities.Department;
@@ -13,6 +14,9 @@ import com.sustainabilitytracker.sustainabilitytracker.repositories.DepartmentRe
 import com.sustainabilitytracker.sustainabilitytracker.repositories.UserRepository;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -62,4 +66,39 @@ public class AuthService {
 
         return userMapper.toResponse(savedUser);
     }
+
+    public User getCurrentUser(){
+        var authentication = SecurityContextHolder.getContext().getAuthentication();
+        var userId =(Long) authentication.getPrincipal();
+
+        return userRepository.findById(userId).orElseThrow(() -> new UsernameNotFoundException("User not found please login first."));
+    }
+
+    public void changePassword(ChangePasswordRequest request) {
+
+        User user = getCurrentUser();
+
+        if (!passwordEncoder.matches(
+                request.getCurrentPassword(), user.getPassword())) {
+            throw new RuntimeException("Current password is wrong");
+        }
+
+        if (passwordEncoder.matches(
+                request.getNewPassword(), user.getPassword())) {
+            throw new RuntimeException("New password must be different");
+        }
+
+        if (!request.getNewPassword().equals(request.getConfirmPassword())) {
+            throw new RuntimeException("Passwords do not match");
+        }
+
+        String hashedNewPassword = passwordEncoder.encode(request.getNewPassword());
+
+        user.setPassword(hashedNewPassword);
+
+        user.setIsFirstLogin(false);
+
+        userRepository.save(user);
+    }
+
 }
