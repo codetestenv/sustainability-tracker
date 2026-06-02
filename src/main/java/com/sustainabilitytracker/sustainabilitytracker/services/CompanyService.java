@@ -30,6 +30,13 @@ public class CompanyService {
         return companyMapper.toResponse(savedCompany);
     }
 
+    public List<CompanyResponse> getAllCompanies() {
+        return companyRepository.findAllByIsActive(true)
+                .stream()
+                .map(companyMapper::toResponse)
+                .toList();
+    }
+
     @Transactional
     public void deactivateCompany(Long companyId) {
 
