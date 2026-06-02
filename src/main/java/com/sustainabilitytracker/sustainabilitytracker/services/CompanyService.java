@@ -37,6 +37,13 @@ public class CompanyService {
                 .toList();
     }
 
+    public CompanyResponse getCompanyById(Long companyId){
+        return companyRepository
+                .findById(companyId)
+                .map(companyMapper::toResponse)
+                .orElseThrow(() -> new ResourceNotFoundException("Company not found with id: " + companyId));
+    }
+
     @Transactional
     public void deactivateCompany(Long companyId) {
 
