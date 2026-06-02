@@ -18,6 +18,18 @@ import java.util.List;
 public class CompanyService {
     private final CompanyRepository companyRepository;
     private final CompanyMapper companyMapper;
+
+    public CompanyResponse createCompany(CompanyRequest request){
+        if (companyRepository.existsByName(request.getName()))
+            throw new DuplicateResourceException(request.getName() + " is already exist.");
+
+        var company = companyMapper.toEntity(request);
+        company.setIsActive(true);
+        Company savedCompany = companyRepository.save(company);
+
+        return companyMapper.toResponse(savedCompany);
+    }
+
     @Transactional
     public void deactivateCompany(Long companyId) {
 
