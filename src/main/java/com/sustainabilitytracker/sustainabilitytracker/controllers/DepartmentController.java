@@ -25,6 +25,16 @@ public class DepartmentController {
     }
 
 
+    @PostMapping
+    public ResponseEntity<DepartmentResponse> createDepartment(
+            @Valid @RequestBody DepartmentRequest request,
+            UriComponentsBuilder uriBuilder) {
+
+        DepartmentResponse departmentResponse = departmentService.createDepartment(request);
+        var uri = uriBuilder.path("api/v1/departments/{id}").buildAndExpand(departmentResponse.getId()).toUri();
+
+        return ResponseEntity.created(uri).body(departmentResponse);
+    }
 }
 //ENDPOINTS:
 //        - GET    /api/v1/departments/company/{companyId}
