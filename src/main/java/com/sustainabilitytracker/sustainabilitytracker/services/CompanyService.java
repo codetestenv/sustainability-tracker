@@ -1,3 +1,23 @@
+package com.sustainabilitytracker.sustainabilitytracker.services;
+
+import com.sustainabilitytracker.sustainabilitytracker.dtos.request.CompanyRequest;
+import com.sustainabilitytracker.sustainabilitytracker.dtos.response.CompanyResponse;
+import com.sustainabilitytracker.sustainabilitytracker.entities.Company;
+import com.sustainabilitytracker.sustainabilitytracker.exceptions.DuplicateResourceException;
+import com.sustainabilitytracker.sustainabilitytracker.exceptions.ResourceNotFoundException;
+import com.sustainabilitytracker.sustainabilitytracker.mappers.CompanyMapper;
+import com.sustainabilitytracker.sustainabilitytracker.repositories.CompanyRepository;
+import lombok.AllArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+
+@Service
+@AllArgsConstructor
+public class CompanyService {
+    private final CompanyRepository companyRepository;
+    private final CompanyMapper companyMapper;
     @Transactional
     public void deactivateCompany(Long companyId) {
 
@@ -13,3 +33,4 @@
         company.getUsers().forEach(user -> user.setIsActive(false));
 
     }
+}
