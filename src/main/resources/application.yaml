@@ -22,4 +22,8 @@ spring:
     accessTokenExpiration: 604800 # 900 # 15m
     refreshTokenExpiration: 604800 # 7d
 
+server:
+  servlet:
+    context-path: /api/v1
+
 kind: Application
