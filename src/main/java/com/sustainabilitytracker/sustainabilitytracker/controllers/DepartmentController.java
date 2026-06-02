@@ -35,13 +35,15 @@ public class DepartmentController {
 
         return ResponseEntity.created(uri).body(departmentResponse);
     }
+
+    @PutMapping("/{departmentId}")
+    public ResponseEntity<DepartmentResponse> updateDepartment(
+            @Valid @RequestBody DepartmentRequest request,
+            @PathVariable Long departmentId) {
+        DepartmentResponse departmentResponse = departmentService.updateDepartment(departmentId,request);
+        return ResponseEntity.ok(departmentResponse);
+    }
 }
-//ENDPOINTS:
-//        - GET    /api/v1/departments/company/{companyId}
-//        → getDepartmentsByCompany()
-//- POST   /api/v1/departments
-//         → createDepartment()
-//- PUT    /api/v1/departments/{id}
-//        → updateDepartment()
+
 //- DELETE /api/v1/departments/{id}
 //        → deactivateDepartment()
