@@ -18,6 +18,12 @@ public class DepartmentController {
 
     private final DepartmentService departmentService;
 
+    @GetMapping("/{companyId}")
+    public ResponseEntity<List<DepartmentResponse>> getDepartmentByCompany(@Valid @PathVariable Long companyId) {
+        List<DepartmentResponse> departments = departmentService.getDepartmentsByCompany(companyId);
+        return ResponseEntity.ok(departments);
+    }
+
 
     @PostMapping
     public ResponseEntity<DepartmentResponse> createDepartment(
