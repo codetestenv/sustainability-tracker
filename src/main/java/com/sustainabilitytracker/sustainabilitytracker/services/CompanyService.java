@@ -44,6 +44,22 @@ public class CompanyService {
                 .orElseThrow(() -> new ResourceNotFoundException("Company not found with id: " + companyId));
     }
 
+    public CompanyResponse updateCompany(Long companyId, CompanyRequest request){
+        Company company = companyRepository
+                .findById(companyId)
+                .orElseThrow(()->
+                        new ResourceNotFoundException("Company not found with id: " + companyId));
+
+        if (request.getName() != null && companyRepository
+                .existsByName(request.getName()))
+            throw new DuplicateResourceException("Company name exist with this name: " + request.getName());
+
+        companyMapper.update(request, company);
+        companyRepository.save(company);
+
+        return companyMapper.toResponse(company);
+    }
+
     @Transactional
     public void deactivateCompany(Long companyId) {
 
