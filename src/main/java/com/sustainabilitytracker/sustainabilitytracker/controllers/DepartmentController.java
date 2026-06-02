@@ -43,7 +43,10 @@ public class DepartmentController {
         DepartmentResponse departmentResponse = departmentService.updateDepartment(departmentId,request);
         return ResponseEntity.ok(departmentResponse);
     }
-}
 
-//- DELETE /api/v1/departments/{id}
-//        → deactivateDepartment()
+    @DeleteMapping("/{departmentId}")
+    public ResponseEntity<DepartmentResponse> deactivateDepartment(@PathVariable Long departmentId){
+        departmentService.deactivateDepartment(departmentId);
+        return ResponseEntity.noContent().build();
+    }
+}
