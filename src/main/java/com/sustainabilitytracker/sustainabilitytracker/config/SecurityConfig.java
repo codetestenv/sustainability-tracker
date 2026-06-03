@@ -1,5 +1,6 @@
 package com.sustainabilitytracker.sustainabilitytracker.config;
 
+import com.sustainabilitytracker.sustainabilitytracker.enums.Role;
 import com.sustainabilitytracker.sustainabilitytracker.filters.JwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -34,10 +35,10 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/auth/**").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/users/register").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.GET, "/users").hasRole("ADMIN")
-                        .requestMatchers("/departments/**").hasRole("ADMIN")
-                        .requestMatchers("/companies/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/users/register").hasRole(Role.ADMIN.name())
+                        .requestMatchers(HttpMethod.GET, "/users").hasRole(Role.ADMIN.name())
+                        .requestMatchers("/departments/**").hasRole(Role.ADMIN.name())
+                        .requestMatchers("/companies/**").hasRole(Role.ADMIN.name())
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
