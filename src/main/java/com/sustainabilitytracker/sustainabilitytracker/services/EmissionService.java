@@ -1,0 +1,133 @@
+package com.sustainabilitytracker.sustainabilitytracker.services;
+
+
+import com.sustainabilitytracker.sustainabilitytracker.dtos.request.EmissionRequest;
+import com.sustainabilitytracker.sustainabilitytracker.dtos.response.EmissionResponse;
+import com.sustainabilitytracker.sustainabilitytracker.entities.Company;
+import com.sustainabilitytracker.sustainabilitytracker.entities.Department;
+import com.sustainabilitytracker.sustainabilitytracker.entities.EmissionData;
+import com.sustainabilitytracker.sustainabilitytracker.entities.User;
+import com.sustainabilitytracker.sustainabilitytracker.enums.DataStatus;
+import com.sustainabilitytracker.sustainabilitytracker.enums.Role;
+import com.sustainabilitytracker.sustainabilitytracker.exceptions.BusinessException;
+import com.sustainabilitytracker.sustainabilitytracker.exceptions.ResourceNotFoundException;
+import com.sustainabilitytracker.sustainabilitytracker.mappers.EmissionMapper;
+import com.sustainabilitytracker.sustainabilitytracker.repositories.CompanyRepository;
+import com.sustainabilitytracker.sustainabilitytracker.repositories.DepartmentRepository;
+import com.sustainabilitytracker.sustainabilitytracker.repositories.EmissionRepository;
+import lombok.AllArgsConstructor;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.stereotype.Service;
+
+import java.math.BigDecimal;
+import java.time.Instant;
+
+
+//BUSINESS LOGIC:
+//STEP 1: Validate company exists and is active
+//STEP 2: Validate department exists and belongs to that company
+//STEP 3: Check current user has permission
+// → EMPLOYEE: can only submit for his OWN department
+// → DEPT_MANAGER: can only submit for his OWN department
+// → SUSTAINABILITY_MANAGER: can submit for any department in his company
+//STEP 4: Check if record for same date/dept already exists and is APPROVED
+//If YES → throw "Data already submitted
+//        for this date"
+//STEP 5: Check for abnormal values
+//If CO2 > threshold → add warning flag
+//but still allow submission
+//STEP 6: Set status = DRAFT
+//STEP 7: Save to database
+//STEP 8: Create notification for DEPT_MANAGER
+//STEP 9: Log action to system_audit_logs
+//STEP 10: Return EmissionResponse
+@Service
+@AllArgsConstructor
+public class EmissionService {
+    private final CompanyRepository companyRepository;
+    private final DepartmentRepository departmentRepository;
+    private final AuthService authService;
+    private final EmissionRepository emissionRepository;
+    private final EmissionMapper emissionMapper;
+
+    public EmissionResponse submitEmission(EmissionRequest request, Long currentUserId) {
+
+        // Validate company exists and is active
+        Company company = companyRepository.findByIdAndIsActiveTrue(request.getCompanyId())
+                .orElseThrow(() -> new ResourceNotFoundException("Company not found or inactive"));
+
+        // Validate department exists and belongs to the company
+        Department department = departmentRepository.findById(request.getDepartmentId())
+                .orElseThrow(() -> new ResourceNotFoundException("Department not found"));
+
+        if (!department.getCompany().getId().equals(company.getId())) {
+            throw new BusinessException("Department does not belong to the specified company");
+        }
+
+        // Get current user and check permission
+        User currentUser = authService.getCurrentUser();
+
+        boolean hasPermission = checkSubmissionPermission(currentUser, department, company);
+        if (!hasPermission) {
+            throw new AccessDeniedException("You do not have permission to submit emissions for this department");
+        }
+
+        // Check if record for same date/dept already exists and is APPROVED
+        boolean alreadyApproved = emissionRepository.existsByDepartmentIdAndRecordedAtAndStatus(
+                department.getId(), request.getRecordedAt(), DataStatus.APPROVED);
+
+        if (alreadyApproved) {
+            throw new BusinessException("Data already submitted and approved for this date");
+        }
+
+        // Check for abnormal values
+        boolean hasWarning = isAbnormalValue(request.getCo2Amount());
+
+        //  Map Request → Entity + enrich with business data
+        EmissionData emissionData = emissionMapper.toEntity(request);
+
+        emissionData.setCompany(company);
+        emissionData.setDepartment(department);
+        emissionData.setSubmittedBy(currentUser);
+        emissionData.setStatus(DataStatus.DRAFT);
+        emissionData.setSubmittedAt(Instant.now());
+//        emissionData.setHasWarning(hasWarning);
+
+        EmissionData savedEmission = emissionRepository.save(emissionData);
+
+        // Create notification for DEPT_MANAGER (optional but recommended)
+        // notificationService.createEmissionSubmittedNotification(savedEmission);
+
+        // Log action to system audit logs
+        // auditLogService.logAction(currentUser.getId(), "EMISSION_SUBMITTED",
+        //         "emission_data", savedEmission.getId(), "Submitted emission data");
+
+//        EmissionResponse response = emissionMapper.toResponse(savedEmission);
+
+//        response.setHasWarning(hasWarning);
+//        response.setMessage(hasWarning
+//                ? "Emission submitted successfully with warning: High CO₂ value detected"
+//                : "Emission data submitted successfully");
+
+        return emissionMapper.toResponse(savedEmission);
+    }
+
+    private boolean checkSubmissionPermission(User user, Department department, Company company) {
+        // EMPLOYEE & DEPT_MANAGER → only their own department
+        if (user.getRole() == Role.EMPLOYEE || user.getRole() == Role.DEPT_MANAGER) {
+            return user.getDepartment().getId().equals(department.getId());
+        }
+
+        // SUSTAINABILITY_MANAGER → any department in their company
+        if (user.getRole() == Role.SUSTAINABILITY_MANAGER) {
+            return user.getCompany().getId().equals(company.getId());
+        }
+
+        return false;
+    }
+
+    private boolean isAbnormalValue(BigDecimal co2Amount) {
+        final BigDecimal CO2_THRESHOLD = new BigDecimal("10000");
+        return co2Amount != null && co2Amount.compareTo(CO2_THRESHOLD) > 0;
+    }
+}
