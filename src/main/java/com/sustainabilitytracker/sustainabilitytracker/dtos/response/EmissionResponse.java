@@ -10,6 +10,7 @@ import java.time.LocalDate;
 public class EmissionResponse {
     private Long id;
     private String companyName;
+    private String departmentName;
     private String submittedByName;
     private String approvedByName;
     private BigDecimal co2Amount;
