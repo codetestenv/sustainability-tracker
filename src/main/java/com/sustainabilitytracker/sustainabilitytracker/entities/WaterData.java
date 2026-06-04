@@ -1,5 +1,7 @@
 package com.sustainabilitytracker.sustainabilitytracker.entities;
 
+import com.sustainabilitytracker.sustainabilitytracker.enums.DataStatus;
+import com.sustainabilitytracker.sustainabilitytracker.enums.WaterSource;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -43,11 +45,13 @@ public class WaterData {
     private BigDecimal recycledLiters;
 
     @Column(name = "source")
-    private String source;
+    @Enumerated(EnumType.STRING)
+    private WaterSource source;
 
     @ColumnDefault("'DRAFT'")
     @Column(name = "status")
-    private String status;
+    @Enumerated(EnumType.STRING)
+    private DataStatus status;
 
     @Lob
     @Column(name = "notes")
