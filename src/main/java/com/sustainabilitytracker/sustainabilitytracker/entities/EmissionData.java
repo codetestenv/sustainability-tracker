@@ -1,5 +1,7 @@
 package com.sustainabilitytracker.sustainabilitytracker.entities;
 
+import com.sustainabilitytracker.sustainabilitytracker.enums.DataStatus;
+import com.sustainabilitytracker.sustainabilitytracker.enums.EmissionScope;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -19,7 +21,7 @@ public class EmissionData {
     @Column(name = "id")
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "company_id")
     private Company company;
 
@@ -45,11 +47,13 @@ public class EmissionData {
     private BigDecimal n2oAmount;
 
     @Column(name = "scope")
-    private String scope;
+    @Enumerated(EnumType.STRING)
+    private EmissionScope scope;
 
     @ColumnDefault("'DRAFT'")
     @Column(name = "status")
-    private String status;
+    @Enumerated(EnumType.STRING)
+    private DataStatus status;
 
     @Lob
     @Column(name = "notes")
