@@ -1,5 +1,7 @@
 package com.sustainabilitytracker.sustainabilitytracker.entities;
 
+import com.sustainabilitytracker.sustainabilitytracker.enums.DataStatus;
+import com.sustainabilitytracker.sustainabilitytracker.enums.WasteType;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -47,11 +49,13 @@ public class WasteData {
     private BigDecimal hazardousKg;
 
     @Column(name = "waste_type")
-    private String wasteType;
+    @Enumerated(EnumType.STRING)
+    private WasteType wasteType;
 
     @ColumnDefault("'DRAFT'")
     @Column(name = "status")
-    private String status;
+    @Enumerated(EnumType.STRING)
+    private DataStatus status;
 
     @Lob
     @Column(name = "notes")
