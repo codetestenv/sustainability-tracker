@@ -7,6 +7,7 @@ import lombok.Data;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.time.LocalDate;
 
 @Data
 public class EmissionRequest {
@@ -21,7 +22,7 @@ public class EmissionRequest {
     private BigDecimal co2Amount;
 
     @Min(0)
-    private BigDecimal ch$Amount;
+    private BigDecimal ch4Amount;
 
     @Min(0)
     private BigDecimal n2oAmount;
@@ -33,4 +34,8 @@ public class EmissionRequest {
 
     @NotNull
     private Instant createdAt;
+
+    @NotNull
+    private LocalDate recordedAt;
+
 }
