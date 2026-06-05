@@ -16,6 +16,7 @@ import com.sustainabilitytracker.sustainabilitytracker.repositories.CompanyRepos
 import com.sustainabilitytracker.sustainabilitytracker.repositories.DepartmentRepository;
 import com.sustainabilitytracker.sustainabilitytracker.repositories.EmissionRepository;
 import lombok.AllArgsConstructor;
+import org.hibernate.annotations.CreationTimestamp;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
@@ -72,7 +73,7 @@ public class EmissionService {
         emissionData.setDepartment(department);
         emissionData.setSubmittedBy(currentUser);
         emissionData.setStatus(DataStatus.DRAFT);
-        emissionData.setSubmittedAt(Instant.now());
+//        emissionData.setSubmittedAt(Instant.now()); // cuz i added @CreationTimestamp
 //        emissionData.setHasWarning(hasWarning);
 
         EmissionData savedEmission = emissionRepository.save(emissionData);
