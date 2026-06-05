@@ -23,24 +23,6 @@ import java.math.BigDecimal;
 import java.time.Instant;
 
 
-//BUSINESS LOGIC:
-//STEP 1: Validate company exists and is active
-//STEP 2: Validate department exists and belongs to that company
-//STEP 3: Check current user has permission
-// → EMPLOYEE: can only submit for his OWN department
-// → DEPT_MANAGER: can only submit for his OWN department
-// → SUSTAINABILITY_MANAGER: can submit for any department in his company
-//STEP 4: Check if record for same date/dept already exists and is APPROVED
-//If YES → throw "Data already submitted
-//        for this date"
-//STEP 5: Check for abnormal values
-//If CO2 > threshold → add warning flag
-//but still allow submission
-//STEP 6: Set status = DRAFT
-//STEP 7: Save to database
-//STEP 8: Create notification for DEPT_MANAGER
-//STEP 9: Log action to system_audit_logs
-//STEP 10: Return EmissionResponse
 @Service
 @AllArgsConstructor
 public class EmissionService {
