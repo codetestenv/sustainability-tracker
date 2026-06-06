@@ -16,6 +16,7 @@ import com.sustainabilitytracker.sustainabilitytracker.mappers.EmissionMapper;
 import com.sustainabilitytracker.sustainabilitytracker.repositories.CompanyRepository;
 import com.sustainabilitytracker.sustainabilitytracker.repositories.DepartmentRepository;
 import com.sustainabilitytracker.sustainabilitytracker.repositories.EmissionRepository;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.AllArgsConstructor;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
@@ -114,6 +115,7 @@ public class EmissionService {
         return co2Amount != null && co2Amount.compareTo(CO2_THRESHOLD) > 0;
     }
 
+    @Transactional
     public EmissionResponse submitForApproval(Long emissionId) {
 
         EmissionData emissionData = emissionRepository.findById(emissionId)
@@ -140,5 +142,5 @@ public class EmissionService {
         return emissionMapper.toResponse(savedEmission);
     }
 
-    
+
 }
