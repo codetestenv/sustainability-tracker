@@ -11,12 +11,12 @@ import com.sustainabilitytracker.sustainabilitytracker.enums.DataStatus;
 import com.sustainabilitytracker.sustainabilitytracker.enums.Role;
 import com.sustainabilitytracker.sustainabilitytracker.exceptions.BusinessException;
 import com.sustainabilitytracker.sustainabilitytracker.exceptions.ResourceNotFoundException;
+import com.sustainabilitytracker.sustainabilitytracker.exceptions.UnauthorizedException;
 import com.sustainabilitytracker.sustainabilitytracker.mappers.EmissionMapper;
 import com.sustainabilitytracker.sustainabilitytracker.repositories.CompanyRepository;
 import com.sustainabilitytracker.sustainabilitytracker.repositories.DepartmentRepository;
 import com.sustainabilitytracker.sustainabilitytracker.repositories.EmissionRepository;
 import lombok.AllArgsConstructor;
-import org.hibernate.annotations.CreationTimestamp;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
@@ -112,5 +112,31 @@ public class EmissionService {
     private boolean isAbnormalValue(BigDecimal co2Amount) {
         final BigDecimal CO2_THRESHOLD = new BigDecimal("10000");
         return co2Amount != null && co2Amount.compareTo(CO2_THRESHOLD) > 0;
+    }
+
+    public EmissionResponse submitForApproval(Long emissionId) {
+
+        EmissionData emissionData = emissionRepository.findById(emissionId)
+                .orElseThrow(() -> new ResourceNotFoundException("Emission not found with id: " + emissionId));
+
+        User currentUser = authService.getCurrentUser();
+
+        if (!emissionData.getSubmittedBy().getId().equals(currentUser.getId())) {
+            throw new UnauthorizedException("You can only submit your own emission records for approval");
+        }
+
+        if (emissionData.getStatus() != DataStatus.DRAFT) {
+            throw new BusinessException("Only DRAFT records can be submitted for approval. Current status: "
+                    + emissionData.getStatus());
+        }
+
+        emissionData.setStatus(DataStatus.PENDING);
+        emissionData.setSubmittedAt(Instant.now());
+        EmissionData savedEmission = emissionRepository.save(emissionData);
+
+        // Send notification to DEPT_MANAGER
+//        notificationService.notifyDepartmentManagerForApproval(savedEmission);
+
+        return emissionMapper.toResponse(savedEmission);
     }
 }
