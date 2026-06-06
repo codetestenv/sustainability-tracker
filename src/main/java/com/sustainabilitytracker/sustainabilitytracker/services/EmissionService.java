@@ -196,4 +196,22 @@ public class EmissionService {
 
         return false;
     }
+
+//    4. rejectEmission(Long emissionId,
+//                      String reason,
+//                      Long currentUserId) → EmissionResponse
+//    BUSINESS LOGIC:
+//    STEP 1: Find emission by id
+//    STEP 2: Check user has permission to reject
+//    STEP 3: Check status is PENDING
+//    STEP 4: Set status = REJECTED
+//    STEP 5: Set rejectionReason = reason
+//    STEP 6: Save changes
+//    STEP 7: Send notification to submitter
+//    with rejection reason
+//    STEP 8: Return updated EmissionResponse
+    public EmissionResponse rejectEmission() {
+
+    }
+
 }
