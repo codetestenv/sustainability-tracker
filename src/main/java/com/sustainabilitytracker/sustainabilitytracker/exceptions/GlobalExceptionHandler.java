@@ -70,6 +70,13 @@ public class GlobalExceptionHandler {
         );
     }
 
+    @ExceptionHandler(UnauthorizedException.class)
+    public ResponseEntity<ErrorDto> handleUnauthorizedException(Exception ex) {
+        ErrorDto errorDto = new ErrorDto(ex.getMessage());
+        errorDto.setStatus(401);
+        return  ResponseEntity.status(401).body(errorDto);
+    }
+
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorDto> handleGeneralException(Exception ex) {
