@@ -13,7 +13,9 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/emissions")
 public class EmissionController {
     @PostMapping
-    public ResponseEntity<EmissionResponse> submitEmission(@Valid @RequestBody EmissionRequest emissionRequest){
+    public ResponseEntity<EmissionResponse> submitEmission(
+            @Valid
+            @RequestBody EmissionRequest emissionRequest){
         return ResponseEntity.ok().build();
     }
 }
