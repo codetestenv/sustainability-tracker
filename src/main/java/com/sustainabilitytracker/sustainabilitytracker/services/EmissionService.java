@@ -79,6 +79,7 @@ public class EmissionService {
         emissionData.setDepartment(department);
         emissionData.setSubmittedBy(currentUser);
         emissionData.setStatus(DataStatus.DRAFT);
+//        emissionData.setCreatedAt(Instant.now());
 //        emissionData.setSubmittedAt(Instant.now()); // cuz i added @CreationTimestamp
 //        emissionData.setHasWarning(hasWarning);
 
