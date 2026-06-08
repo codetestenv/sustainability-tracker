@@ -198,6 +198,7 @@ public class EmissionService {
         return false;
     }
 
+    @Transactional
     public EmissionResponse rejectEmission(Long emissionId, String reason) {
 
         EmissionData emissionData = emissionRepository.findById(emissionId)
