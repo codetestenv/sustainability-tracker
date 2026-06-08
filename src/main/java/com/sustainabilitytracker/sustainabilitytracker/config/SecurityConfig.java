@@ -39,6 +39,11 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/users").hasRole(Role.ADMIN.name())
                         .requestMatchers("/departments/**").hasRole(Role.ADMIN.name())
                         .requestMatchers("/companies/**").hasRole(Role.ADMIN.name())
+                        .requestMatchers(HttpMethod.POST, "/emissions").hasAnyRole(
+                                                                            Role.EMPLOYEE.name(),
+                                                                            Role.DEPT_MANAGER.name(),
+                                                                            Role.SUSTAINABILITY_MANAGER.name()
+                                                                          )
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
