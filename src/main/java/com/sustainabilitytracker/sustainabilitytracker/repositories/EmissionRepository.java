@@ -23,9 +23,6 @@ public interface EmissionRepository extends JpaRepository<EmissionData, Long> {
 
     List<EmissionData> findAllByCompany_Id(Long companyId);
 
-    List<EmissionData> findAllByCompanyAndStatus_Approved(DataStatus status);
-
-
     List<EmissionData> findAllByCompanyAndStatusAndSubmittedAtBetween(Company company,
                                                                       DataStatus status,
                                                                       Instant startDate,
