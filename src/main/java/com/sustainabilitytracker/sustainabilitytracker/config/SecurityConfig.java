@@ -52,6 +52,10 @@ public class SecurityConfig {
                                 Role.SUSTAINABILITY_MANAGER.name(),
                                 Role.DEPT_MANAGER.name()
                         )
+                        .requestMatchers(HttpMethod.PUT, "/emissions/*/reject").hasAnyRole(
+                                Role.SUSTAINABILITY_MANAGER.name(),
+                                Role.DEPT_MANAGER.name()
+                        )
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
