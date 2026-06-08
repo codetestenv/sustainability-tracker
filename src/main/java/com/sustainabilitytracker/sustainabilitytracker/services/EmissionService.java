@@ -251,6 +251,7 @@ public class EmissionService {
         return role == Role.ADMIN;
     }
 
+    @Transactional
     public List<EmissionResponse> getEmissionByCompany(Long companyId) {
 
         User currentUser = authService.getCurrentUser();
