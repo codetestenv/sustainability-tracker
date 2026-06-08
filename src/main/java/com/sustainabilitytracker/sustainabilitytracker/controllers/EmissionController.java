@@ -6,10 +6,7 @@ import com.sustainabilitytracker.sustainabilitytracker.services.EmissionService;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponentsBuilder;
 
 @RestController
@@ -26,5 +23,11 @@ public class EmissionController {
         EmissionResponse emissionResponse = emissionService.submitEmission(emissionRequest);
         var uri = uriBuilder.path("/emissions/{emissionsId}").buildAndExpand(emissionResponse.getId()).toUri();
         return ResponseEntity.created(uri).body(emissionResponse);
+    }
+
+    @PutMapping("/{emissionId}/submit")
+    public ResponseEntity<EmissionResponse> submitForApproval(@PathVariable Long emissionId) {
+        EmissionResponse emissionResponse = emissionService.submitForApproval(emissionId);
+        return ResponseEntity.ok(emissionResponse);
     }
 }
