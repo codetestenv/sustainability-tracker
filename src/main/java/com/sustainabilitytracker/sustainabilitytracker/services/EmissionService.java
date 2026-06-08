@@ -24,6 +24,8 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.List;
+import java.util.stream.Collectors;
 
 
 @Service
@@ -247,6 +249,48 @@ public class EmissionService {
         }
 
         return role == Role.ADMIN;
+    }
+
+    public List<EmissionResponse> getEmissionByCompany(Long companyId) {
+
+        User currentUser = authService.getCurrentUser();
+        Company company = companyRepository.findById(companyId)
+                .orElseThrow(() -> new ResourceNotFoundException("Company not found with id: " + companyId));
+
+        // Check if user belongs to the company or has global access
+        boolean isAdminOrAuditor = currentUser.getRole() == Role.ADMIN ||
+                currentUser.getRole() == Role.AUDITOR;
+
+        boolean belongsToCompany = currentUser.getCompany() != null &&
+                currentUser.getCompany().getId().equals(companyId);
+
+        if (!belongsToCompany && !isAdminOrAuditor) {
+            throw new AccessDeniedException("You do not have access to this company's emissions");
+        }
+
+        // Now filter based on role
+        List<EmissionData> emissions;
+
+        if (currentUser.getRole() == Role.EMPLOYEE) {
+            //EMPLOYEE → only his own submissions
+            emissions = emissionRepository.findAllBySubmittedBy(currentUser);
+
+        } else if (currentUser.getRole() == Role.DEPT_MANAGER) {
+            // DEPT_MANAGER -> only his department data
+            if (currentUser.getDepartment() == null) {
+                throw new BusinessException("Department manager has no assigned department");
+            }
+            emissions = emissionRepository.findAllByDepartment(currentUser.getDepartment());
+
+        } else {
+            // SUSTAINABILITY_MANAGER / ADMIN / AUDITOR → all company data
+            emissions = emissionRepository.findAllByCompany_Id(company.getId());
+        }
+
+        // Convert to response and return
+        return emissions.stream()
+                .map(emissionMapper::toResponse)
+                .collect(Collectors.toList());
     }
 
 }
