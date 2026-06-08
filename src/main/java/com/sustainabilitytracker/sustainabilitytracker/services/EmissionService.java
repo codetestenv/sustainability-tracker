@@ -3,6 +3,7 @@ package com.sustainabilitytracker.sustainabilitytracker.services;
 
 import com.sustainabilitytracker.sustainabilitytracker.dtos.request.EmissionRequest;
 import com.sustainabilitytracker.sustainabilitytracker.dtos.response.EmissionResponse;
+import com.sustainabilitytracker.sustainabilitytracker.dtos.response.EmissionSummaryResponse;
 import com.sustainabilitytracker.sustainabilitytracker.entities.Company;
 import com.sustainabilitytracker.sustainabilitytracker.entities.Department;
 import com.sustainabilitytracker.sustainabilitytracker.entities.EmissionData;
@@ -25,6 +26,7 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 
@@ -292,6 +294,71 @@ public class EmissionService {
         return emissions.stream()
                 .map(emissionMapper::toResponse)
                 .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public EmissionSummaryResponse getEmissionSummary(Long companyId, Instant startDate, Instant endDate) {
+
+        // Validate dates
+        if (startDate == null || endDate == null || startDate.isAfter(endDate)) {
+            throw new BadRequestException("Invalid date range: startDate must be before or equal to endDate");
+        }
+
+        // Verify company exists + permission check
+        Company company = companyRepository.findById(companyId)
+                .orElseThrow(() -> new ResourceNotFoundException("Company not found with id: " + companyId));
+
+        User currentUser = authService.getCurrentUser();
+
+        // Reuse similar permission logic as getEmissionByCompany
+        if (!hasAccessToCompany(currentUser, companyId)) {
+            throw new AccessDeniedException("You do not have access to this company's emission summary");
+        }
+
+        // Get all APPROVED emissions in date range
+        List<EmissionData> approvedEmissions = emissionRepository
+                .findAllByCompanyAndStatusAndSubmittedAtBetween(
+                        company, DataStatus.APPROVED, startDate, endDate);
+
+        // Calculate totals
+        BigDecimal totalCO2 = approvedEmissions.stream()
+                .map(EmissionData::getCo2Amount)
+                .filter(Objects::nonNull)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal totalCH4 = approvedEmissions.stream()
+                .map(EmissionData::getCh4Amount)
+                .filter(Objects::nonNull)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal totalN2O = approvedEmissions.stream()
+                .map(EmissionData::getN2oAmount)
+                .filter(Objects::nonNull)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal totalEmissions = totalCO2.add(totalCH4).add(totalN2O);
+
+        EmissionSummaryResponse summary = new EmissionSummaryResponse();
+        summary.setTotalCO2(totalCO2);
+        summary.setTotalCH4(totalCH4);
+        summary.setTotalN2O(totalN2O);
+        summary.setTotalEmissions(totalEmissions);
+        summary.setRecordCount(approvedEmissions.size());
+        summary.setPeriod(startDate + " to " + endDate);
+
+        return summary;
+    }
+    private boolean hasAccessToCompany(User user, Long companyId) {
+        if (user == null) return false;
+
+        // ADMIN / AUDITOR can see everything
+        if (user.getRole() == Role.ADMIN || user.getRole() == Role.AUDITOR) {
+            return true;
+        }
+
+        // Other roles must belong to the company
+        return user.getCompany() != null &&
+                user.getCompany().getId().equals(companyId);
     }
 
 }
