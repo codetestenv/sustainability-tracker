@@ -30,4 +30,10 @@ public class EmissionController {
         EmissionResponse emissionResponse = emissionService.submitForApproval(emissionId);
         return ResponseEntity.ok(emissionResponse);
     }
+
+    @PutMapping("/{emissionId}/approve")
+    public ResponseEntity<EmissionResponse> approveEmission(@PathVariable Long emissionId) {
+        EmissionResponse emissionResponse = emissionService.approveEmission(emissionId);
+        return ResponseEntity.ok(emissionResponse);
+    }
 }
