@@ -4,8 +4,8 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
 @Data
-public class RejectEmissionRequest {
+public class RejectRequest {
 
-    @NotBlank(message = "Reason is required")
+    @NotBlank(message = "Rejection reason is required")
     private String reason;
 }
