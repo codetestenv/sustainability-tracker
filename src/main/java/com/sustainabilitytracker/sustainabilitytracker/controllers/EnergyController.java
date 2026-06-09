@@ -4,7 +4,6 @@ import com.sustainabilitytracker.sustainabilitytracker.dtos.request.EnergyReques
 import com.sustainabilitytracker.sustainabilitytracker.dtos.request.RejectRequest;
 import com.sustainabilitytracker.sustainabilitytracker.dtos.response.EnergyResponse;
 import com.sustainabilitytracker.sustainabilitytracker.dtos.response.EnergySummaryResponse;
-import com.sustainabilitytracker.sustainabilitytracker.repositories.EnergyRepository;
 import com.sustainabilitytracker.sustainabilitytracker.services.EnergyService;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
