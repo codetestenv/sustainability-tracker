@@ -3,6 +3,8 @@ package com.sustainabilitytracker.sustainabilitytracker.controllers;
 import com.sustainabilitytracker.sustainabilitytracker.dtos.request.EmissionRequest;
 import com.sustainabilitytracker.sustainabilitytracker.dtos.request.RejectEmissionRequest;
 import com.sustainabilitytracker.sustainabilitytracker.dtos.response.EmissionResponse;
+import com.sustainabilitytracker.sustainabilitytracker.entities.EmissionData;
+import com.sustainabilitytracker.sustainabilitytracker.repositories.EmissionRepository;
 import com.sustainabilitytracker.sustainabilitytracker.services.EmissionService;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
@@ -10,11 +12,14 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/emissions")
 @AllArgsConstructor
 public class EmissionController {
     private final EmissionService emissionService;
+    private final EmissionRepository emissionRepository;
 
     @PostMapping
     public ResponseEntity<EmissionResponse> submitEmission(
@@ -43,5 +48,11 @@ public class EmissionController {
                                                            @Valid @RequestBody RejectEmissionRequest request) {
         EmissionResponse emissionResponse = emissionService.rejectEmission(emissionId,request.getReason());
         return ResponseEntity.ok(emissionResponse);
+    }
+
+    @GetMapping("/company/{companyId}")
+    public ResponseEntity<List<EmissionResponse>> getEmissionsByCompany(@PathVariable Long companyId) {
+        List<EmissionResponse> emissionData = emissionService.getEmissionByCompany(companyId);
+        return ResponseEntity.ok(emissionData);
     }
 }
