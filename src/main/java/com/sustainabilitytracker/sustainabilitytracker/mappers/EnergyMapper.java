@@ -24,25 +24,13 @@ public interface EnergyMapper {
     EnergyData toEntity(EnergyRequest request);
 
 
-    @Mapping(target = "companyName",
-            source = "company.name")
-
-    @Mapping(target = "departmentName",
-            source = "department.name")
-
-    @Mapping(target = "submittedByName",
-            source = "submittedBy.email")
-
-    @Mapping(target = "approvedByName",
-            source = "approvedBy.email")
-
-    @Mapping(target = "sourceType",
-            source = "sourceType")
-
-    @Mapping(target = "status",
-            source = "status")
-
+    @Mapping(target = "companyName",source = "company.name")
+    @Mapping(target = "departmentName",source = "department.name")
+    @Mapping(target = "submittedByName",source = "submittedBy.email")
+    @Mapping(target = "approvedByName", source = "approvedBy.email")
+    @Mapping(target = "sourceType",source = "sourceType")
+    @Mapping(target = "status", source = "status")
     EnergyResponse toResponse(EnergyData energyData);
-    
+
     List<EnergyResponse> toResponseList(List<EnergyData> energyDataList);
 }
