@@ -188,6 +188,31 @@ public class EnergyService {
         return energyMapper.toResponse(updated);
     }
 
+    // GET ENERGY BY COMPANY
+    public List<EnergyResponse> getEnergyByCompany(Long companyId, Long currentUserId) {
+
+        User currentUser = userRepository.findById(currentUserId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + currentUserId));
+
+        if (!hasCompanyAccess(currentUser, companyId)) {
+            throw new AccessDeniedException("You do not have access to this company's energy data");
+        }
+
+        List<EnergyData> energyList;
+
+        if (currentUser.getRole() == Role.EMPLOYEE) {
+            energyList = energyRepository.findBySubmittedBy_Id(currentUserId);
+        }
+        else if (currentUser.getRole() == Role.DEPT_MANAGER) {
+            energyList = energyRepository.findByDepartmentId(currentUser.getDepartment().getId());
+        }
+        else {
+            energyList = energyRepository.findByCompanyId(companyId);
+        }
+
+        return energyMapper.toResponseList(energyList);
+    }
+
 
     private void checkSubmitPermission(User user, Department department, Company company) {
         switch (user.getRole()) {
@@ -226,4 +251,10 @@ public class EnergyService {
         }
     }
 
+    private boolean hasCompanyAccess(User user, Long companyId) {
+        if (user.getRole() == Role.ADMIN || user.getRole() == Role.AUDITOR) {
+            return true;
+        }
+        return user.getCompany() != null && user.getCompany().getId().equals(companyId);
+    }
 }
