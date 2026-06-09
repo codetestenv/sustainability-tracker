@@ -1,10 +1,121 @@
 package com.sustainabilitytracker.sustainabilitytracker.services;
 
-import lombok.AllArgsConstructor;
+import com.sustainabilitytracker.sustainabilitytracker.dtos.request.EnergyRequest;
+import com.sustainabilitytracker.sustainabilitytracker.dtos.response.EnergyResponse;
+import com.sustainabilitytracker.sustainabilitytracker.dtos.response.EnergySummaryResponse;
+import com.sustainabilitytracker.sustainabilitytracker.entities.Company;
+import com.sustainabilitytracker.sustainabilitytracker.entities.Department;
+import com.sustainabilitytracker.sustainabilitytracker.entities.EnergyData;
+import com.sustainabilitytracker.sustainabilitytracker.entities.User;
+import com.sustainabilitytracker.sustainabilitytracker.enums.DataStatus;
+import com.sustainabilitytracker.sustainabilitytracker.enums.Role;
+import com.sustainabilitytracker.sustainabilitytracker.exceptions.*;
+import com.sustainabilitytracker.sustainabilitytracker.mappers.EnergyMapper;
+import com.sustainabilitytracker.sustainabilitytracker.projection.EnergyTotalsProjection;
+import com.sustainabilitytracker.sustainabilitytracker.repositories.CompanyRepository;
+import com.sustainabilitytracker.sustainabilitytracker.repositories.DepartmentRepository;
+import com.sustainabilitytracker.sustainabilitytracker.repositories.EnergyRepository;
+import com.sustainabilitytracker.sustainabilitytracker.repositories.UserRepository;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.util.List;
+
+@Slf4j
 @Service
-@AllArgsConstructor
+@RequiredArgsConstructor
 public class EnergyService {
+
+    private final EnergyRepository energyRepository;
+    private final CompanyRepository companyRepository;
+    private final DepartmentRepository departmentRepository;
+    private final UserRepository userRepository;
+    private final EnergyMapper energyMapper;
+//    private final NotificationService notificationService;
+//    private final AuditLogService auditLogService;
+//    private final ScoreService scoreService;
+
+    private static final BigDecimal KWH_THRESHOLD = new BigDecimal("100000");
+
+
+    @Transactional
+    public EnergyResponse submitEnergy(EnergyRequest request, Long currentUserId) {
+
+        Company company = companyRepository.findById(request.getCompanyId())
+                .orElseThrow(() -> new ResourceNotFoundException("Company not found with id: " + request.getCompanyId()));
+
+        if (!company.getIsActive()) {
+            throw new BadRequestException("Company is not active");
+        }
+
+        Department department = departmentRepository.findById(request.getDepartmentId())
+                .orElseThrow(() -> new ResourceNotFoundException("Department not found with id: " + request.getDepartmentId()));
+
+        if (!department.getCompany().getId().equals(company.getId())) {
+            throw new BadRequestException("Department does not belong to this company");
+        }
+
+        User currentUser = userRepository.findById(currentUserId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + currentUserId));
+
+        checkSubmitPermission(currentUser, department, company);
+
+        // Check for duplicate approved record
+        boolean alreadyApproved = energyRepository
+                .existsByDepartmentIdAndRecordedAtAndStatus(
+                        department.getId(), request.getRecordedAt(), DataStatus.APPROVED);
+
+        if (alreadyApproved) {
+            throw new DuplicateResourceException("Energy data already submitted and approved for this date");
+        }
+
+        // Handle abnormal KWH value
+        String notes = request.getNotes();
+        if (request.getTotalKwh() != null && request.getTotalKwh().compareTo(KWH_THRESHOLD) > 0) {
+            log.warn("Abnormal KWH detected: {} for company: {}", request.getTotalKwh(), company.getId());
+            notes = "[WARNING: Abnormal KWH value] " + (notes != null ? notes : "");
+        }
+
+        EnergyData energyData = energyMapper.toEntity(request);
+        energyData.setCompany(company);
+        energyData.setDepartment(department);
+        energyData.setSubmittedBy(currentUser);
+        energyData.setStatus(DataStatus.DRAFT);
+        energyData.setNotes(notes);
+
+        EnergyData savedEnergy = energyRepository.save(energyData);
+
+        // Notify department manager
+//        notificationService.notifyByDepartmentAndRole(
+//                department.getId(), "DEPT_MANAGER", "New energy data submitted for: " + department.getName());
+
+        // Audit log
+//        auditLogService.log("SUBMIT_ENERGY", "ENERGY", savedEnergy.getId(), null, savedEnergy);
+
+        return energyMapper.toResponse(savedEnergy);
+    }
+
+    private void checkSubmitPermission(User user, Department department, Company company) {
+        switch (user.getRole()) {
+            case EMPLOYEE:
+            case DEPT_MANAGER:
+                if (!user.getDepartment().getId().equals(department.getId())) {
+                    throw new UnauthorizedException("You can only submit for your own department");
+                }
+                break;
+            case SUSTAINABILITY_MANAGER:
+                if (!user.getCompany().getId().equals(company.getId())) {
+                    throw new UnauthorizedException("You can only submit for your own company");
+                }
+                break;
+            default:
+                throw new UnauthorizedException("You do not have permission to submit energy data");
+        }
+    }
 
 }
