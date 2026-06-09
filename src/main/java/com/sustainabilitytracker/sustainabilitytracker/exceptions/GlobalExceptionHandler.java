@@ -45,15 +45,12 @@ public class GlobalExceptionHandler {
         return ResponseEntity.badRequest().body(errorDto);
     }
 
-
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ErrorDto> handleValidationError(MethodArgumentNotValidException ex) {
-
-        Map<String, String> errors = new HashMap<>();
-
-        ex.getBindingResult().getFieldErrors().forEach(error -> {
-            errors.put(error.getField(), error.getDefaultMessage());
-        });
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ErrorDto> handleAccessDeniedException(AccessDeniedException ex) {
+        ErrorDto errorDto = new ErrorDto(ex.getMessage());
+        errorDto.setStatus(403);
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(errorDto);
+    }
 
         String message = "Validation failed: " + String.join(", ", errors.values());
 
