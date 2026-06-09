@@ -129,6 +129,39 @@ public class EnergyService {
     }
 
 
+    @Transactional
+    public EnergyResponse approveEnergy(Long energyId, Long currentUserId) {
+
+        EnergyData energyData = energyRepository.findById(energyId)
+                .orElseThrow(() -> new ResourceNotFoundException("Energy record not found with id: " + energyId));
+
+        User approver = userRepository.findById(currentUserId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + currentUserId));
+
+        checkApprovePermission(approver, energyData);
+
+        if (energyData.getStatus() != DataStatus.PENDING) {
+            throw new BadRequestException("Only PENDING records can be approved");
+        }
+
+        energyData.setStatus(DataStatus.APPROVED);
+        energyData.setApprovedBy(approver);
+        energyData.setApprovedAt(Instant.now());
+
+        EnergyData updated = energyRepository.save(energyData);
+
+//        scoreService.recalculateForCompany(updated.getCompany().getId());
+//
+//        notificationService.notifyUser(
+//                updated.getSubmittedBy().getId(), "Your energy record has been APPROVED");
+//
+//        auditLogService.log("APPROVE_ENERGY", "ENERGY", updated.getId(), null, updated);
+
+        return energyMapper.toResponse(updated);
+    }
+
+
+
     private void checkSubmitPermission(User user, Department department, Company company) {
         switch (user.getRole()) {
             case EMPLOYEE:
@@ -144,6 +177,25 @@ public class EnergyService {
                 break;
             default:
                 throw new UnauthorizedException("You do not have permission to submit energy data");
+        }
+    }
+
+    private void checkApprovePermission(User user, EnergyData energyData) {
+        switch (user.getRole()) {
+            case DEPT_MANAGER:
+                if (!user.getDepartment().getId().equals(energyData.getDepartment().getId())) {
+                    throw new UnauthorizedException("You can only approve data in your department");
+                }
+                break;
+            case SUSTAINABILITY_MANAGER:
+                if (!user.getCompany().getId().equals(energyData.getCompany().getId())) {
+                    throw new UnauthorizedException("You can only approve data in your company");
+                }
+                break;
+            case ADMIN:
+                return; // Admin can approve anything
+            default:
+                throw new UnauthorizedException("You do not have permission to approve this record");
         }
     }
 
