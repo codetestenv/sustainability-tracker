@@ -100,6 +100,35 @@ public class EnergyService {
         return energyMapper.toResponse(savedEnergy);
     }
 
+
+    @Transactional
+    public EnergyResponse submitForApproval(Long energyId, Long currentUserId) {
+
+        EnergyData energyData = energyRepository.findById(energyId)
+                .orElseThrow(() -> new ResourceNotFoundException("Energy record not found with id: " + energyId));
+
+        if (!energyData.getSubmittedBy().getId().equals(currentUserId)) {
+            throw new UnauthorizedException("You can only submit your own records for approval");
+        }
+
+        if (energyData.getStatus() != DataStatus.DRAFT) {
+            throw new BadRequestException("Only DRAFT records can be submitted for approval. Current: " + energyData.getStatus());
+        }
+
+        energyData.setStatus(DataStatus.PENDING);
+        energyData.setSubmittedAt(Instant.now());
+
+        EnergyData updated = energyRepository.save(energyData);
+
+//        notificationService.notifyByDepartmentAndRole(
+//                energyData.getDepartment().getId(),
+//                "DEPT_MANAGER",
+//                "Energy record waiting for approval");
+
+        return energyMapper.toResponse(updated);
+    }
+
+
     private void checkSubmitPermission(User user, Department department, Company company) {
         switch (user.getRole()) {
             case EMPLOYEE:
