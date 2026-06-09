@@ -52,13 +52,23 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(errorDto);
     }
 
-        String message = "Validation failed: " + String.join(", ", errors.values());
 
-        ErrorDto errorDto = new ErrorDto(message);
-        errorDto.setStatus(400);
-
-        return ResponseEntity.badRequest().body(errorDto);
-    }
+//    @ExceptionHandler(MethodArgumentNotValidException.class)
+//    public ResponseEntity<ErrorDto> handleValidationError(MethodArgumentNotValidException ex) {
+//
+//        Map<String, String> errors = new HashMap<>();
+//
+//        ex.getBindingResult().getFieldErrors().forEach(error -> {
+//            errors.put(error.getField(), error.getDefaultMessage());
+//        });
+//
+//        String message = "Validation failed: " + String.join(", ", errors.values());
+//
+//        ErrorDto errorDto = new ErrorDto(message);
+//        errorDto.setStatus(400);
+//
+//        return ResponseEntity.badRequest().body(errorDto);
+//    }
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ErrorDto> handleInvalidJson(HttpMessageNotReadableException ex) {
