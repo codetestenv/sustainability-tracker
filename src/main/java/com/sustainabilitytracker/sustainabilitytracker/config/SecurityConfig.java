@@ -40,10 +40,10 @@ public class SecurityConfig {
                         .requestMatchers("/departments/**").hasRole(Role.ADMIN.name())
                         .requestMatchers("/companies/**").hasRole(Role.ADMIN.name())
                         .requestMatchers(HttpMethod.POST, "/emissions").hasAnyRole(
-                                                                            Role.EMPLOYEE.name(),
-                                                                            Role.DEPT_MANAGER.name(),
-                                                                            Role.SUSTAINABILITY_MANAGER.name()
-                                                                          )
+                                Role.EMPLOYEE.name(),
+                                Role.DEPT_MANAGER.name(),
+                                Role.SUSTAINABILITY_MANAGER.name()
+                        )
                         .requestMatchers(HttpMethod.PUT, "/emissions/*/submit").hasAnyRole(
                                 Role.EMPLOYEE.name(),
                                 Role.DEPT_MANAGER.name()
@@ -53,6 +53,24 @@ public class SecurityConfig {
                                 Role.DEPT_MANAGER.name()
                         )
                         .requestMatchers(HttpMethod.PUT, "/emissions/*/reject").hasAnyRole(
+                                Role.SUSTAINABILITY_MANAGER.name(),
+                                Role.DEPT_MANAGER.name()
+                        )
+                        // energy
+                        .requestMatchers(HttpMethod.POST, "/energies").hasAnyRole(
+                                Role.EMPLOYEE.name(),
+                                Role.DEPT_MANAGER.name(),
+                                Role.SUSTAINABILITY_MANAGER.name()
+                        )
+                        .requestMatchers(HttpMethod.PUT, "/energies/*/submit").hasAnyRole(
+                                Role.EMPLOYEE.name(),
+                                Role.DEPT_MANAGER.name()
+                        )
+                        .requestMatchers(HttpMethod.PUT, "/energies/*/aprove").hasAnyRole(
+                                Role.SUSTAINABILITY_MANAGER.name(),
+                                Role.DEPT_MANAGER.name()
+                        )
+                        .requestMatchers(HttpMethod.PUT, "/energies/*/reject").hasAnyRole(
                                 Role.SUSTAINABILITY_MANAGER.name(),
                                 Role.DEPT_MANAGER.name()
                         )
