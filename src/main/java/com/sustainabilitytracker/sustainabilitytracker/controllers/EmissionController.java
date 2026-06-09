@@ -3,6 +3,7 @@ package com.sustainabilitytracker.sustainabilitytracker.controllers;
 import com.sustainabilitytracker.sustainabilitytracker.dtos.request.EmissionRequest;
 import com.sustainabilitytracker.sustainabilitytracker.dtos.request.RejectEmissionRequest;
 import com.sustainabilitytracker.sustainabilitytracker.dtos.response.EmissionResponse;
+import com.sustainabilitytracker.sustainabilitytracker.dtos.response.EmissionSummaryResponse;
 import com.sustainabilitytracker.sustainabilitytracker.entities.EmissionData;
 import com.sustainabilitytracker.sustainabilitytracker.repositories.EmissionRepository;
 import com.sustainabilitytracker.sustainabilitytracker.services.EmissionService;
@@ -12,6 +13,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneOffset;
 import java.util.List;
 
 @RestController
@@ -54,5 +58,27 @@ public class EmissionController {
     public ResponseEntity<List<EmissionResponse>> getEmissionsByCompany(@PathVariable Long companyId) {
         List<EmissionResponse> emissionData = emissionService.getEmissionByCompany(companyId);
         return ResponseEntity.ok(emissionData);
+    }
+
+    @GetMapping("/company/{companyId}/summary")
+    public ResponseEntity<EmissionSummaryResponse> getEmissionSummary(
+            @PathVariable Long companyId,
+            @RequestParam(required = false) LocalDate startDate,
+            @RequestParam(required = false) LocalDate endDate) {
+
+        LocalDate now = LocalDate.now();
+
+        Instant startInstant = (startDate != null ?
+                startDate.atStartOfDay(ZoneOffset.UTC).toInstant() :
+                now.minusDays(30).atStartOfDay(ZoneOffset.UTC).toInstant());
+
+        Instant endInstant = (endDate != null ?
+                endDate.atTime(23, 59, 59).toInstant(ZoneOffset.UTC) :
+                now.atTime(23, 59, 59).toInstant(ZoneOffset.UTC));
+
+        EmissionSummaryResponse summaryResponse = emissionService
+                .getEmissionSummary(companyId, startInstant, endInstant);
+
+        return ResponseEntity.ok(summaryResponse);
     }
 }
