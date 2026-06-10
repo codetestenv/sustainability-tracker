@@ -83,6 +83,33 @@ public class WaterService {
         return waterMapper.toResponse(saved);
     }
 
+    // SUBMIT FOR APPROVAL
+    @Transactional
+    public WaterResponse submitForApproval(Long waterId) {
+        WaterData waterData = waterRepository.findById(waterId)
+                .orElseThrow(() -> new ResourceNotFoundException("Water record not found with id: " + waterId));
+
+        User currentUser = authService.getCurrentUser();
+
+        if (!waterData.getSubmittedBy().getId().equals(currentUser.getId())) {
+            throw new UnauthorizedException("You can only submit your own records for approval");
+        }
+
+        if (waterData.getStatus() != DataStatus.DRAFT) {
+            throw new BadRequestException("Only DRAFT records can be submitted for approval");
+        }
+
+        waterData.setStatus(DataStatus.PENDING);
+        waterData.setSubmittedAt(Instant.now());
+
+        WaterData updated = waterRepository.save(waterData);
+
+//        notificationService.notifyByDepartmentAndRole(
+//                waterData.getDepartment().getId(), "DEPT_MANAGER", "Water record waiting for approval");
+
+        return waterMapper.toResponse(updated);
+    }
+
 
 
     // PRIVATE HELPERS
@@ -102,6 +129,7 @@ public class WaterService {
                 throw new UnauthorizedException("You do not have permission to submit water data");
         }
     }
+
 
 
 }
