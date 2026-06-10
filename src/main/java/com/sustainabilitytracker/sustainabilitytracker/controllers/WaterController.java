@@ -1,5 +1,6 @@
 package com.sustainabilitytracker.sustainabilitytracker.controllers;
 
+import com.sustainabilitytracker.sustainabilitytracker.dtos.request.RejectRequest;
 import com.sustainabilitytracker.sustainabilitytracker.dtos.request.WaterRequest;
 import com.sustainabilitytracker.sustainabilitytracker.dtos.response.WaterResponse;
 import com.sustainabilitytracker.sustainabilitytracker.repositories.WaterRepository;
@@ -43,6 +44,16 @@ public class WaterController {
     @PutMapping("/{waterId}/approve")
     public ResponseEntity<WaterResponse> approveWater(@PathVariable Long waterId) {
         WaterResponse response = waterService.approveWater(waterId);
+        return ResponseEntity.ok(response);
+    }
+
+    // REJECT WATER
+    @PutMapping("/{waterId}/reject")
+    public ResponseEntity<WaterResponse> rejectWater(
+            @PathVariable Long waterId,
+            @Valid @RequestBody RejectRequest request) {
+
+        WaterResponse response = waterService.rejectWater(waterId, request.getReason());
         return ResponseEntity.ok(response);
     }
 
