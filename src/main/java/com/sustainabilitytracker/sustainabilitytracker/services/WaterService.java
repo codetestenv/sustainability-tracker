@@ -162,6 +162,27 @@ public class WaterService {
         return waterMapper.toResponse(updated);
     }
 
+    // GET WATER BY COMPANY
+    public List<WaterResponse> getWaterByCompany(Long companyId) {
+        User currentUser = authService.getCurrentUser();
+
+        if (!hasCompanyAccess(currentUser, companyId)) {
+            throw new AccessDeniedException("You do not have access to this company's water data");
+        }
+
+        List<WaterData> waterList;
+
+        if (currentUser.getRole() == Role.EMPLOYEE) {
+            waterList = waterRepository.findBySubmittedBy_Id(currentUser.getId());
+        } else if (currentUser.getRole() == Role.DEPT_MANAGER) {
+            waterList = waterRepository.findByDepartmentId(currentUser.getDepartment().getId());
+        } else {
+            waterList = waterRepository.findByCompanyId(companyId);
+        }
+
+        return waterMapper.toResponseList(waterList);
+    }
+
 
 
     // PRIVATE HELPERS
@@ -201,5 +222,11 @@ public class WaterService {
         }
     }
 
+    private boolean hasCompanyAccess(User user, Long companyId) {
+        if (user.getRole() == Role.ADMIN || user.getRole() == Role.AUDITOR) {
+            return true;
+        }
+        return user.getCompany() != null && user.getCompany().getId().equals(companyId);
+    }
 
 }
