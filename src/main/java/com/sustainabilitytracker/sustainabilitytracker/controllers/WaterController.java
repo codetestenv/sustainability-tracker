@@ -7,10 +7,7 @@ import com.sustainabilitytracker.sustainabilitytracker.services.WaterService;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponentsBuilder;
 
 @AllArgsConstructor
@@ -33,6 +30,13 @@ public class WaterController {
                 .toUri();
 
         return ResponseEntity.created(uri).body(waterResponse);
+    }
+
+    // SUBMIT FOR APPROVAL
+    @PutMapping("/{waterId}/submit")
+    public ResponseEntity<WaterResponse> submitForApproval(@PathVariable Long waterId) {
+        WaterResponse response = waterService.submitForApproval(waterId);
+        return ResponseEntity.ok(response);
     }
 
 
