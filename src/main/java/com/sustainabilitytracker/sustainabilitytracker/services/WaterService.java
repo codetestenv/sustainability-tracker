@@ -183,7 +183,19 @@ public class WaterService {
         return waterMapper.toResponseList(waterList);
     }
 
+    //GET WATER SUMMARY
+    public WaterSummaryResponse getWaterSummary(Long companyId, LocalDate start, LocalDate end) {
+        WaterTotalsProjection totals = waterRepository
+                .getTotalsByCompanyAndPeriod(companyId, start, end);
 
+        return WaterSummaryResponse.builder()
+                .totalConsumedLiters(totals.getTotalConsumedLiters())
+                .totalRecycledLiters(totals.getTotalRecycledLiters())
+                .recyclingRate(totals.getRecyclingRate())
+                .recordCount(totals.getRecordCount().intValue())
+                .period(start + " to " + end)
+                .build();
+    }
 
     // PRIVATE HELPERS
     private void checkSubmitPermission(User user, Department department, Company company) {
