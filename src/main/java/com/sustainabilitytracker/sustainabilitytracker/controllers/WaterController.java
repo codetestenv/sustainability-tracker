@@ -19,7 +19,7 @@ import java.util.List;
 
 @AllArgsConstructor
 @RestController
-@RequestMapping("")
+@RequestMapping("/water")
 public class WaterController {
 
     private final WaterService waterService;
