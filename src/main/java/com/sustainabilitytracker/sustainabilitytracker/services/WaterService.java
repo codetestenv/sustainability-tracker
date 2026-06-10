@@ -110,6 +110,33 @@ public class WaterService {
         return waterMapper.toResponse(updated);
     }
 
+    // APPROVE WATER
+    @Transactional
+    public WaterResponse approveWater(Long waterId) {
+        WaterData waterData = waterRepository.findById(waterId)
+                .orElseThrow(() -> new ResourceNotFoundException("Water record not found with id: " + waterId));
+
+        User approver = authService.getCurrentUser();
+
+        checkApprovePermission(approver, waterData);
+
+        if (waterData.getStatus() != DataStatus.PENDING) {
+            throw new BadRequestException("Only PENDING records can be approved");
+        }
+
+        waterData.setStatus(DataStatus.APPROVED);
+        waterData.setApprovedBy(approver);
+        waterData.setApprovedAt(Instant.now());
+
+        WaterData updated = waterRepository.save(waterData);
+
+//        scoreService.recalculateForCompany(updated.getCompany().getId());
+//
+//        notificationService.notifyUser(updated.getSubmittedBy().getId(), "Your water record has been APPROVED");
+
+        return waterMapper.toResponse(updated);
+    }
+
 
 
     // PRIVATE HELPERS
@@ -127,6 +154,25 @@ public class WaterService {
                 break;
             default:
                 throw new UnauthorizedException("You do not have permission to submit water data");
+        }
+    }
+
+    private void checkApprovePermission(User user, WaterData waterData) {
+        switch (user.getRole()) {
+            case DEPT_MANAGER:
+                if (!user.getDepartment().getId().equals(waterData.getDepartment().getId())) {
+                    throw new UnauthorizedException("You can only approve in your department");
+                }
+                break;
+            case SUSTAINABILITY_MANAGER:
+                if (!user.getCompany().getId().equals(waterData.getCompany().getId())) {
+                    throw new UnauthorizedException("You can only approve in your company");
+                }
+                break;
+            case ADMIN:
+                return;
+            default:
+                throw new UnauthorizedException("You do not have permission to approve this record");
         }
     }
 
