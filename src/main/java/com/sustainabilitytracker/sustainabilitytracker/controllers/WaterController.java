@@ -3,6 +3,7 @@ package com.sustainabilitytracker.sustainabilitytracker.controllers;
 import com.sustainabilitytracker.sustainabilitytracker.dtos.request.RejectRequest;
 import com.sustainabilitytracker.sustainabilitytracker.dtos.request.WaterRequest;
 import com.sustainabilitytracker.sustainabilitytracker.dtos.response.WaterResponse;
+import com.sustainabilitytracker.sustainabilitytracker.dtos.response.WaterSummaryResponse;
 import com.sustainabilitytracker.sustainabilitytracker.repositories.WaterRepository;
 import com.sustainabilitytracker.sustainabilitytracker.services.WaterService;
 import jakarta.validation.Valid;
@@ -11,6 +12,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneOffset;
 import java.util.List;
 
 @AllArgsConstructor
@@ -66,5 +70,26 @@ public class WaterController {
         return ResponseEntity.ok(waterData);
     }
 
+    // GET WATER SUMMARY
+    @GetMapping("/company/{companyId}/summary")
+    public ResponseEntity<WaterSummaryResponse> getWaterSummary(
+            @PathVariable Long companyId,
+            @RequestParam(required = false) LocalDate startDate,
+            @RequestParam(required = false) LocalDate endDate) {
 
+        LocalDate now = LocalDate.now();
+
+        Instant startInstant = (startDate != null ?
+                startDate.atStartOfDay(ZoneOffset.UTC).toInstant() :
+                now.minusDays(30).atStartOfDay(ZoneOffset.UTC).toInstant());
+
+        Instant endInstant = (endDate != null ?
+                endDate.atTime(23, 59, 59).toInstant(ZoneOffset.UTC) :
+                now.atTime(23, 59, 59).toInstant(ZoneOffset.UTC));
+
+        WaterSummaryResponse summaryResponse = waterService
+                .getWaterSummary(companyId, startDate, endDate);
+
+        return ResponseEntity.ok(summaryResponse);
+    }
 }
