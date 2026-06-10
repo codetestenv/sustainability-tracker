@@ -1,0 +1,107 @@
+package com.sustainabilitytracker.sustainabilitytracker.services;
+
+import com.sustainabilitytracker.sustainabilitytracker.dtos.request.WaterRequest;
+import com.sustainabilitytracker.sustainabilitytracker.dtos.response.WaterResponse;
+import com.sustainabilitytracker.sustainabilitytracker.dtos.response.WaterSummaryResponse;
+import com.sustainabilitytracker.sustainabilitytracker.entities.Company;
+import com.sustainabilitytracker.sustainabilitytracker.entities.Department;
+import com.sustainabilitytracker.sustainabilitytracker.entities.User;
+import com.sustainabilitytracker.sustainabilitytracker.entities.WaterData;
+import com.sustainabilitytracker.sustainabilitytracker.enums.DataStatus;
+import com.sustainabilitytracker.sustainabilitytracker.enums.Role;
+import com.sustainabilitytracker.sustainabilitytracker.exceptions.*;
+import com.sustainabilitytracker.sustainabilitytracker.mappers.WaterMapper;
+import com.sustainabilitytracker.sustainabilitytracker.projection.WaterTotalsProjection;
+import com.sustainabilitytracker.sustainabilitytracker.repositories.CompanyRepository;
+import com.sustainabilitytracker.sustainabilitytracker.repositories.DepartmentRepository;
+import com.sustainabilitytracker.sustainabilitytracker.repositories.WaterRepository;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.Instant;
+import java.time.LocalDate;
+import java.util.List;
+
+@Slf4j
+@Service
+@RequiredArgsConstructor
+public class WaterService {
+    private final WaterRepository waterRepository;
+    private final CompanyRepository companyRepository;
+    private final DepartmentRepository departmentRepository;
+    private final AuthService authService;
+    private final WaterMapper waterMapper;
+//    private final NotificationService notificationService;
+//    private final AuditLogService auditLogService;
+//    private final ScoreService scoreService;
+
+    //SUBMIT WATER
+    @Transactional
+    public WaterResponse submitWater(WaterRequest request) {
+
+        Company company = companyRepository.findById(request.getCompanyId())
+                .orElseThrow(() -> new ResourceNotFoundException("Company not found with id: " + request.getCompanyId()));
+
+        if (!company.getIsActive()) {
+            throw new BadRequestException("Company is not active");
+        }
+
+        Department department = departmentRepository.findById(request.getDepartmentId())
+                .orElseThrow(() -> new ResourceNotFoundException("Department not found with id: " + request.getDepartmentId()));
+
+        if (!department.getCompany().getId().equals(company.getId())) {
+            throw new BadRequestException("Department does not belong to this company");
+        }
+
+        User currentUser = authService.getCurrentUser();
+
+        checkSubmitPermission(currentUser, department, company);
+
+        boolean alreadyApproved = waterRepository
+                .existsByDepartmentIdAndRecordedAtAndStatus(
+                        department.getId(), request.getRecordedAt(), DataStatus.APPROVED);
+
+        if (alreadyApproved) {
+            throw new DuplicateResourceException("Water data already submitted and approved for this date");
+        }
+
+        WaterData waterData = waterMapper.toEntity(request);
+        waterData.setCompany(company);
+        waterData.setDepartment(department);
+        waterData.setSubmittedBy(currentUser);
+        waterData.setStatus(DataStatus.DRAFT);
+
+        WaterData saved = waterRepository.save(waterData);
+
+//        notificationService.notifyByDepartmentAndRole(
+//                department.getId(), "DEPT_MANAGER", "New water data submitted for: " + department.getName());
+//
+//        auditLogService.log("SUBMIT_WATER", "WATER", saved.getId(), null, saved);
+
+        return waterMapper.toResponse(saved);
+    }
+
+
+
+    // PRIVATE HELPERS
+    private void checkSubmitPermission(User user, Department department, Company company) {
+        switch (user.getRole()) {
+            case EMPLOYEE, DEPT_MANAGER:
+                if (!user.getDepartment().getId().equals(department.getId())) {
+                    throw new UnauthorizedException("You can only submit for your own department");
+                }
+                break;
+            case SUSTAINABILITY_MANAGER:
+                if (!user.getCompany().getId().equals(company.getId())) {
+                    throw new UnauthorizedException("You can only submit for your own company");
+                }
+                break;
+            default:
+                throw new UnauthorizedException("You do not have permission to submit water data");
+        }
+    }
+
+
+}
