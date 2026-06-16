@@ -1,5 +1,6 @@
 package com.sustainabilitytracker.sustainabilitytracker.entities;
 
+import com.sustainabilitytracker.sustainabilitytracker.enums.DataStatus;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -55,7 +56,7 @@ public class SocialData {
 
     @ColumnDefault("'DRAFT'")
     @Column(name = "status")
-    private String status;
+    private DataStatus status;
 
     @Lob
     @Column(name = "notes")
