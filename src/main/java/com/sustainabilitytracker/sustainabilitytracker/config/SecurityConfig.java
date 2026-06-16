@@ -110,6 +110,24 @@ public class SecurityConfig {
                                 Role.SUSTAINABILITY_MANAGER.name(),
                                 Role.DEPT_MANAGER.name()
                         )
+                        // Governance
+                        .requestMatchers(HttpMethod.POST, "/governance").hasAnyRole(
+                                Role.EMPLOYEE.name(),
+                                Role.DEPT_MANAGER.name(),
+                                Role.SUSTAINABILITY_MANAGER.name()
+                        )
+                        .requestMatchers(HttpMethod.PUT, "/governance/*/submit").hasAnyRole(
+                                Role.EMPLOYEE.name(),
+                                Role.DEPT_MANAGER.name()
+                        )
+                        .requestMatchers(HttpMethod.PUT, "/governance/*/aprove").hasAnyRole(
+                                Role.SUSTAINABILITY_MANAGER.name(),
+                                Role.DEPT_MANAGER.name()
+                        )
+                        .requestMatchers(HttpMethod.PUT, "/governance/*/reject").hasAnyRole(
+                                Role.SUSTAINABILITY_MANAGER.name(),
+                                Role.DEPT_MANAGER.name()
+                        )
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
