@@ -92,6 +92,24 @@ public class SecurityConfig {
                                 Role.SUSTAINABILITY_MANAGER.name(),
                                 Role.DEPT_MANAGER.name()
                         )
+                        // Social
+                        .requestMatchers(HttpMethod.POST, "/social").hasAnyRole(
+                                Role.EMPLOYEE.name(),
+                                Role.DEPT_MANAGER.name(),
+                                Role.SUSTAINABILITY_MANAGER.name()
+                        )
+                        .requestMatchers(HttpMethod.PUT, "/social/*/submit").hasAnyRole(
+                                Role.EMPLOYEE.name(),
+                                Role.DEPT_MANAGER.name()
+                        )
+                        .requestMatchers(HttpMethod.PUT, "/social/*/aprove").hasAnyRole(
+                                Role.SUSTAINABILITY_MANAGER.name(),
+                                Role.DEPT_MANAGER.name()
+                        )
+                        .requestMatchers(HttpMethod.PUT, "/social/*/reject").hasAnyRole(
+                                Role.SUSTAINABILITY_MANAGER.name(),
+                                Role.DEPT_MANAGER.name()
+                        )
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
