@@ -73,4 +73,6 @@ public interface EnergyRepository
     BigDecimal getTotalRenewableKwh(Long companyId, LocalDate start, LocalDate end);
 
     BigDecimal getTotalKwh(Long companyId, LocalDate start, LocalDate end);
+
+    Object countByCompanyIdAndStatus(Long companyId, DataStatus dataStatus);
 }
