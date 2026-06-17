@@ -34,4 +34,6 @@ public interface SocialRepository extends JpaRepository<SocialData, Long> {
     BigDecimal getAverageTrainingHours(Long companyId, LocalDate start, LocalDate end);
 
     BigDecimal getAverageSatisfactionScore(Long companyId, LocalDate start, LocalDate end);
+
+    Object countByCompanyIdAndStatus(Long companyId, DataStatus dataStatus);
 }
