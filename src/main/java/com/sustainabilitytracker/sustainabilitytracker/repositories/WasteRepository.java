@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -34,4 +35,12 @@ public interface WasteRepository extends JpaRepository<WasteData, Long> {
             @Param("companyId") Long companyId,
             @Param("start") LocalDate start,
             @Param("end") LocalDate end);
+
+    BigDecimal getTotalKgByCompanyAndPeriod(Long companyId, LocalDate start, LocalDate end);
+
+    BigDecimal getTotalRecycledKgByCompanyAndPeriod(Long companyId, LocalDate start, LocalDate end);
+
+    BigDecimal getTotalKg(Long companyId, LocalDate start, LocalDate end);
+
+    BigDecimal getTotalRecycledKg(Long companyId, LocalDate start, LocalDate end);
 }
