@@ -10,4 +10,7 @@ public interface SustainabilityScoreRepository extends JpaRepository<Sustainabil
     List<SustainabilityScore> findByCompanyIdOrderByPeriodStartDesc(Long companyId);
 
     Optional<SustainabilityScore> findTopByCompanyIdOrderByCalculatedAtDesc(Long companyId);
+    Optional<SustainabilityScore> findTopByOrderByTotalScoreDesc();
+    Optional<SustainabilityScore> findTopByOrderByTotalScoreAsc();
+    List<SustainabilityScore> findTop6ByCompanyIdOrderByPeriodStartDesc(Long companyId);
 }
