@@ -11,6 +11,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
@@ -46,4 +47,8 @@ public interface EmissionRepository extends JpaRepository<EmissionData, Long> {
             @Param("start") LocalDate start,
             @Param("end") LocalDate end
     );
+
+    BigDecimal getTotalCo2ByCompanyAndPeriod(Long companyId, LocalDate start, LocalDate end);
+
+    BigDecimal getTotalCo2(Long companyId, LocalDate start, LocalDate end);
 }
