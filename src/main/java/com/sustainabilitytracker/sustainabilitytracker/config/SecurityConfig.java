@@ -159,6 +159,20 @@ public class SecurityConfig {
                                         Role.SUSTAINABILITY_MANAGER.name(),
                                         Role.DEPT_MANAGER.name()
                                 )
+                        // Audit
+                        .requestMatchers(HttpMethod.GET, "/audits/pending").hasAnyRole(
+                                Role.ADMIN.name(),
+                                Role.SUSTAINABILITY_MANAGER.name()
+                        )
+                        .requestMatchers(HttpMethod.PUT, "/audits/reports/*/review").hasAnyRole(
+                                Role.ADMIN.name(),
+                                Role.SUSTAINABILITY_MANAGER.name()
+                        )
+                        .requestMatchers(HttpMethod.GET, "/audits/reports/*/history").hasAnyRole(
+                                Role.ADMIN.name(),
+                                Role.SUSTAINABILITY_MANAGER.name(),
+                                Role.DEPT_MANAGER.name()
+                        )
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
