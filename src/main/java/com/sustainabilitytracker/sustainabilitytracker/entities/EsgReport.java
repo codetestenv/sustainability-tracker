@@ -3,8 +3,7 @@ package com.sustainabilitytracker.sustainabilitytracker.entities;
 import com.sustainabilitytracker.sustainabilitytracker.enums.AuditStatus;
 import com.sustainabilitytracker.sustainabilitytracker.enums.ReportType;
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.CreationTimestamp;
 
@@ -15,6 +14,9 @@ import java.time.LocalDate;
 @Setter
 @Entity
 @Table(name = "esg_reports")
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
 public class EsgReport {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
