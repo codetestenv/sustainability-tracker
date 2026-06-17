@@ -12,6 +12,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
@@ -64,4 +65,12 @@ public interface EnergyRepository
     boolean existsByDepartmentIdAndRecordedAtAndStatus(Long id, @NotNull(message = "Recorded date is required") LocalDate recordedAt, DataStatus dataStatus);
 
     List<EnergyData> findAllByCompanyAndStatusAndSubmittedAtBetween(Company company, DataStatus dataStatus, Instant startDate, Instant endDate);
+
+    BigDecimal getTotalKwhByCompanyAndPeriod(Long companyId, LocalDate start, LocalDate end);
+
+    BigDecimal getTotalRenewableKwhByCompanyAndPeriod(Long companyId, LocalDate start, LocalDate end);
+
+    BigDecimal getTotalRenewableKwh(Long companyId, LocalDate start, LocalDate end);
+
+    BigDecimal getTotalKwh(Long companyId, LocalDate start, LocalDate end);
 }
