@@ -43,4 +43,6 @@ public interface WasteRepository extends JpaRepository<WasteData, Long> {
     BigDecimal getTotalKg(Long companyId, LocalDate start, LocalDate end);
 
     BigDecimal getTotalRecycledKg(Long companyId, LocalDate start, LocalDate end);
+
+    Object countByCompanyIdAndStatus(Long companyId, DataStatus dataStatus);
 }
