@@ -5,8 +5,9 @@ import com.sustainabilitytracker.sustainabilitytracker.dtos.response.CompanyResp
 import com.sustainabilitytracker.sustainabilitytracker.entities.Company;
 import org.mapstruct.Mapper;
 import org.mapstruct.MappingTarget;
+import org.mapstruct.ReportingPolicy;
 
-@Mapper(componentModel = "spring")
+@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface CompanyMapper {
     Company toEntity(CompanyRequest companyRequest);
 
