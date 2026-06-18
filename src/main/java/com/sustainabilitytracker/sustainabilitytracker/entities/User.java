@@ -2,8 +2,7 @@ package com.sustainabilitytracker.sustainabilitytracker.entities;
 
 import com.sustainabilitytracker.sustainabilitytracker.enums.Role;
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.CreationTimestamp;
 
@@ -13,6 +12,9 @@ import java.time.Instant;
 @Setter
 @Entity
 @Table(name = "users")
+@AllArgsConstructor
+@NoArgsConstructor
+@Builder
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -42,6 +44,7 @@ public class User {
 
     @ColumnDefault("1")
     @Column(name = "is_active")
+    @Builder.Default
     private Boolean isActive = true;
 
     @ColumnDefault("1")
