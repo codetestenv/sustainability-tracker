@@ -18,25 +18,28 @@ import java.time.LocalDate;
 import java.util.List;
 
 @Repository
-public interface EnergyRepository
-        extends JpaRepository<EnergyData, Long> {
+public interface EnergyRepository extends JpaRepository<EnergyData, Long> {
 
     List<EnergyData> findByCompanyId(Long companyId);
-
     List<EnergyData> findByDepartmentId(Long departmentId);
+    List<EnergyData> findByCompanyIdAndStatus(Long companyId, DataStatus status);
+    List<EnergyData> findBySubmittedBy_Id(Long userId);
+    List<EnergyData> findByCompanyIdAndRecordedAtBetween(Long companyId, LocalDate start, LocalDate end);
+    List<EnergyData> findAllByCompany_Id(Long companyId);
+    List<EnergyData> findAllByDepartment(Department department);
+    List<EnergyData> findAllBySubmittedBy(User currentUser);
 
-    List<EnergyData> findByCompanyIdAndStatus(
-            Long companyId,
-            DataStatus status
+    boolean existsByDepartmentIdAndRecordedAtAndStatus(
+            Long id,
+            LocalDate recordedAt,
+            DataStatus dataStatus
     );
 
-    // Employee sees his own submissions
-    List<EnergyData> findBySubmittedBy_Id(Long userId);
-
-    List<EnergyData> findByCompanyIdAndRecordedAtBetween(
-            Long companyId,
-            LocalDate start,
-            LocalDate end
+    List<EnergyData> findAllByCompanyAndStatusAndSubmittedAtBetween(
+            Company company,
+            DataStatus dataStatus,
+            Instant startDate,
+            Instant endDate
     );
 
     @Query("""
@@ -56,23 +59,38 @@ public interface EnergyRepository
             @Param("end") LocalDate end
     );
 
-    List<EnergyData> findAllByCompany_Id(Long companyId);
+    @Query("""
+            SELECT COALESCE(SUM(e.totalKwh), 0)
+            FROM EnergyData e
+            WHERE e.company.id = :companyId
+            AND e.recordedAt BETWEEN :start AND :end
+            AND e.status = 'APPROVED'
+            """)
+    BigDecimal getTotalKwh(
+            @Param("companyId") Long companyId,
+            @Param("start") LocalDate start,
+            @Param("end") LocalDate end
+    );
 
-    List<EnergyData> findAllByDepartment(Department department);
+    @Query("""
+            SELECT COALESCE(SUM(e.renewableKwh), 0)
+            FROM EnergyData e
+            WHERE e.company.id = :companyId
+            AND e.recordedAt BETWEEN :start AND :end
+            AND e.status = 'APPROVED'
+            """)
+    BigDecimal getTotalRenewableKwh(
+            @Param("companyId") Long companyId,
+            @Param("start") LocalDate start,
+            @Param("end") LocalDate end
+    );
 
-    List<EnergyData> findAllBySubmittedBy(User currentUser);
 
-    boolean existsByDepartmentIdAndRecordedAtAndStatus(Long id, @NotNull(message = "Recorded date is required") LocalDate recordedAt, DataStatus dataStatus);
-
-    List<EnergyData> findAllByCompanyAndStatusAndSubmittedAtBetween(Company company, DataStatus dataStatus, Instant startDate, Instant endDate);
-
-    BigDecimal getTotalKwhByCompanyAndPeriod(Long companyId, LocalDate start, LocalDate end);
-
-    BigDecimal getTotalRenewableKwhByCompanyAndPeriod(Long companyId, LocalDate start, LocalDate end);
-
-    BigDecimal getTotalRenewableKwh(Long companyId, LocalDate start, LocalDate end);
-
-    BigDecimal getTotalKwh(Long companyId, LocalDate start, LocalDate end);
-
-    Object countByCompanyIdAndStatus(Long companyId, DataStatus dataStatus);
+    @Query("""
+        SELECT COUNT(e)
+        FROM EnergyData e
+        WHERE e.company.id = :companyId
+        AND e.status = :status
+        """)
+    int countByCompanyIdAndStatus(@Param("companyId") Long companyId, @Param("status") DataStatus status);
 }
