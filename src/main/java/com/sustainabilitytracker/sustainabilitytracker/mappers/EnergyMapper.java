@@ -5,10 +5,11 @@ import com.sustainabilitytracker.sustainabilitytracker.dtos.response.EnergyRespo
 import com.sustainabilitytracker.sustainabilitytracker.entities.EnergyData;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+import org.mapstruct.ReportingPolicy;
 
 import java.util.List;
 
-@Mapper(componentModel = "spring")
+@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface EnergyMapper {
 
     @Mapping(target = "id", ignore = true)
