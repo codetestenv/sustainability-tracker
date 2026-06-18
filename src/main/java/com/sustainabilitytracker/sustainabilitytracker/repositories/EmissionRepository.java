@@ -10,27 +10,34 @@ import com.sustainabilitytracker.sustainabilitytracker.projection.EmissionTotals
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
 
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 
+@Repository
 public interface EmissionRepository extends JpaRepository<EmissionData, Long> {
-    boolean existsByDepartmentIdAndRecordedAtAndStatus(Long departmentId, LocalDate attr0, DataStatus status);
+
+    boolean existsByDepartmentIdAndRecordedAtAndStatus(
+            Long departmentId,
+            LocalDate recordedAt,
+            DataStatus status
+    );
 
     List<EmissionData> findAllByCompany(Company company);
-
     List<EmissionData> findAllBySubmittedBy(User submittedBy);
-
     List<EmissionData> findAllByDepartment(Department department);
-
     List<EmissionData> findAllByCompany_Id(Long companyId);
 
-    List<EmissionData> findAllByCompanyAndStatusAndSubmittedAtBetween(Company company,
-                                                                      DataStatus status,
-                                                                      Instant startDate,
-                                                                      Instant endDate);
+    List<EmissionData> findAllByCompanyAndStatusAndSubmittedAtBetween(
+            Company company,
+            DataStatus status,
+            Instant startDate,
+            Instant endDate
+    );
+
     @Query("""
             SELECT
                 SUM(e.co2Amount)  AS totalCO2,
@@ -48,9 +55,25 @@ public interface EmissionRepository extends JpaRepository<EmissionData, Long> {
             @Param("end") LocalDate end
     );
 
-    BigDecimal getTotalCo2ByCompanyAndPeriod(Long companyId, LocalDate start, LocalDate end);
+    @Query("""
+    SELECT COALESCE(SUM(e.co2Amount), 0)
+    FROM EmissionData e
+    WHERE e.company.id = :companyId
+      AND e.recordedAt BETWEEN :start AND :end
+      AND e.status = 'APPROVED'
+    """)
+    BigDecimal getTotalCo2(
+            @Param("companyId") Long companyId,
+            @Param("start") LocalDate start,
+            @Param("end") LocalDate end
+    );
 
-    BigDecimal getTotalCo2(Long companyId, LocalDate start, LocalDate end);
-
-    Object countByCompanyIdAndStatus(Long companyId, DataStatus dataStatus);
+    @Query("""
+            SELECT COUNT(e)
+            FROM EmissionData e
+            WHERE e.company.id = :companyId
+            AND e.status = :status
+            """)
+    int countByCompanyIdAndStatus(@Param("companyId") Long companyId,@Param("status") DataStatus status);
 }
+
