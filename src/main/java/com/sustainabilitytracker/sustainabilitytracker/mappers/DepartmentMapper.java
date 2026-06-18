@@ -5,8 +5,9 @@ import com.sustainabilitytracker.sustainabilitytracker.dtos.response.DepartmentR
 import com.sustainabilitytracker.sustainabilitytracker.entities.Department;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+import org.mapstruct.ReportingPolicy;
 
-@Mapper(componentModel = "spring")
+@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface DepartmentMapper {
 
     Department toEntity(DepartmentRequest request);
