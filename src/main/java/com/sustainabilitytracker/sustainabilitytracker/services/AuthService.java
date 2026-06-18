@@ -1,7 +1,10 @@
 package com.sustainabilitytracker.sustainabilitytracker.services;
 
+import com.sustainabilitytracker.sustainabilitytracker.config.JwtProperties;
 import com.sustainabilitytracker.sustainabilitytracker.dtos.request.ChangePasswordRequest;
+import com.sustainabilitytracker.sustainabilitytracker.dtos.request.LoginRequest;
 import com.sustainabilitytracker.sustainabilitytracker.dtos.request.RegisterUserRequest;
+import com.sustainabilitytracker.sustainabilitytracker.dtos.response.JwtResponse;
 import com.sustainabilitytracker.sustainabilitytracker.dtos.response.UserResponse;
 import com.sustainabilitytracker.sustainabilitytracker.entities.Department;
 import com.sustainabilitytracker.sustainabilitytracker.entities.User;
@@ -12,8 +15,14 @@ import com.sustainabilitytracker.sustainabilitytracker.exceptions.ResourceNotFou
 import com.sustainabilitytracker.sustainabilitytracker.mappers.UserMapper;
 import com.sustainabilitytracker.sustainabilitytracker.repositories.DepartmentRepository;
 import com.sustainabilitytracker.sustainabilitytracker.repositories.UserRepository;
+import com.sustainabilitytracker.sustainabilitytracker.security.JwtTokenProvider;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
+import lombok.NoArgsConstructor;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -25,6 +34,9 @@ import org.springframework.stereotype.Service;
 @AllArgsConstructor
 public class AuthService {
     private final UserRepository userRepository;
+    private final AuthenticationManager authenticationManager;
+    private final JwtTokenProvider jwtTokenProvider;
+    private final JwtProperties jwtProperties;
     private final DepartmentRepository departmentRepository;
     private final PasswordEncoder passwordEncoder;
     private final UserMapper userMapper;
@@ -92,6 +104,28 @@ public class AuthService {
         throw new UsernameNotFoundException("Unable to get current user");
     }
 
+    public JwtResponse login(LoginRequest request,
+                              HttpServletResponse response) {
+        authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(
+                        request.getEmail(),
+                        request.getPassword()
+                )
+        );
+        var user = userRepository.findByEmail(request.getEmail()).orElseThrow();
+
+        var accessToken = jwtTokenProvider.generateAccessToken(user);
+        var refreshToken = jwtTokenProvider.generateRefreshToken(user);
+
+        var cookie = new Cookie("refreshToken", refreshToken);
+        cookie.setHttpOnly(true);
+        cookie.setPath("/auth/refresh");
+        cookie.setMaxAge(jwtProperties.getRefreshTokenExpiration());
+        cookie.setSecure(true);
+        response.addCookie(cookie);
+
+        return new JwtResponse(accessToken);
+    }
 
     public void changePassword(ChangePasswordRequest request) {
 
