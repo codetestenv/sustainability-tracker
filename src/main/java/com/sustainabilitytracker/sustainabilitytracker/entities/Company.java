@@ -7,6 +7,7 @@ import lombok.Setter;
 import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.CreationTimestamp;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -39,6 +40,9 @@ public class Company {
 
     @Column(name = "email")
     private String email;
+
+    @Column(name = "co2_target")
+    private BigDecimal co2Target;
 
     @OneToMany(mappedBy = "company")
     List<Department> departments;
