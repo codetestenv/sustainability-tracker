@@ -64,11 +64,10 @@ public class EmissionData {
     @Column(name = "rejection_reason")
     private String rejectionReason;
 
-    @Column(name = "recorded_at")
+    @Column(name = "recorded_at", nullable = false)
     private LocalDate recordedAt;
 
-    @CreationTimestamp
-    @Column(name = "submitted_at", nullable = false, updatable = false)
+    @Column(name = "submitted_at")
     private Instant submittedAt;
 
     @Column(name = "approved_at")
