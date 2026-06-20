@@ -20,8 +20,8 @@ public class CompanyController {
     private final CompanyService companyService;
 
     @GetMapping
-    public List<CompanyResponse> getAllCompanies() {
-        return companyService.getAllCompanies();
+    public ResponseEntity<List<CompanyResponse>> getAllCompanies() {
+        return ResponseEntity.ok(companyService.getAllCompanies());
     }
 
     @PostMapping
