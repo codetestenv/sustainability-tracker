@@ -2,8 +2,8 @@ package com.sustainabilitytracker.sustainabilitytracker.services;
 
 import com.sustainabilitytracker.sustainabilitytracker.entities.Company;
 import com.sustainabilitytracker.sustainabilitytracker.entities.SustainabilityScore;
-import com.sustainabilitytracker.sustainabilitytracker.enums.DataStatus;
 import com.sustainabilitytracker.sustainabilitytracker.enums.PeriodType;
+import com.sustainabilitytracker.sustainabilitytracker.exceptions.BadRequestException;
 import com.sustainabilitytracker.sustainabilitytracker.exceptions.ResourceNotFoundException;
 import com.sustainabilitytracker.sustainabilitytracker.repositories.*;
 import lombok.RequiredArgsConstructor;
@@ -15,6 +15,7 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 
 @Slf4j
@@ -30,46 +31,97 @@ public class ScoreCalculationService {
     private final GovernanceRepository governanceRepository;
     private final SustainabilityScoreRepository scoreRepository;
     private final CompanyRepository companyRepository;
+    private final SustainabilityTargetRepository targetRepository;
+
+    // Constants
+    private static final double DEFAULT_SCORE_NO_DATA = 70.0;
+    private static final double DEFAULT_CO2_SCORE = 80.0;
+    private static final double MAX_SCORE = 100.0;
+    private static final double TRAINING_TARGET_HOURS = 40.0;
 
     @Transactional
-    public SustainabilityScore calculateAndSaveScore(Long companyId, LocalDate periodStart, LocalDate periodEnd) {
+    public SustainabilityScore calculateAndSaveScore(Long companyId,
+                                                     LocalDate periodStart,
+                                                     LocalDate periodEnd,
+                                                     PeriodType periodType) {
 
         Company company = companyRepository.findById(companyId)
                 .orElseThrow(() -> new ResourceNotFoundException("Company not found with id: " + companyId));
+
+        validatePeriod(periodStart, periodEnd);
+
+        log.info("Calculating ESG score for company: {} from {} to {}", companyId, periodStart, periodEnd);
 
         double envScore = calculateEnvironmentScore(companyId, periodStart, periodEnd);
         double socialScore = calculateSocialScore(companyId, periodStart, periodEnd);
         double govScore = calculateGovernanceScore(companyId, periodStart, periodEnd);
 
         double totalScore = (envScore * 0.40) + (socialScore * 0.30) + (govScore * 0.30);
+        totalScore = Math.round(totalScore * 100.0) / 100.0; // Round to 2 decimals
 
         String grade = determineGrade(totalScore);
 
-        SustainabilityScore score = new SustainabilityScore();
-        score.setCompany(company);
-        score.setPeriodStart(periodStart);
-        score.setPeriodEnd(periodEnd);
-        score.setPeriodType(PeriodType.MONTHLY);
-        score.setEnvironmentScore(BigDecimal.valueOf(envScore));
-        score.setSocialScore(BigDecimal.valueOf(socialScore));
-        score.setGovernanceScore(BigDecimal.valueOf(govScore));
-        score.setTotalScore(BigDecimal.valueOf(totalScore));
-        score.setGrade(grade);
-        score.setCalculatedAt(Instant.now());
+        // Check if score already exists for this period
+        Optional<SustainabilityScore> existing = scoreRepository
+                .findByCompanyIdAndPeriodStartAndPeriodEnd(companyId, periodStart, periodEnd);
+
+        if (existing.isPresent()) {
+            SustainabilityScore score = existing.get();
+            score.setEnvironmentScore(BigDecimal.valueOf(envScore));
+            score.setSocialScore(BigDecimal.valueOf(socialScore));
+            score.setGovernanceScore(BigDecimal.valueOf(govScore));
+            score.setTotalScore(BigDecimal.valueOf(totalScore));
+            score.setGrade(grade);
+            score.setCalculatedAt(Instant.now());
+            return scoreRepository.save(score);
+        }
+
+        // Create new score
+        SustainabilityScore score = SustainabilityScore.builder()
+                .company(company)
+                .periodStart(periodStart)
+                .periodEnd(periodEnd)
+                .periodType(periodType)
+                .environmentScore(BigDecimal.valueOf(envScore))
+                .socialScore(BigDecimal.valueOf(socialScore))
+                .governanceScore(BigDecimal.valueOf(govScore))
+                .totalScore(BigDecimal.valueOf(totalScore))
+                .grade(grade)
+                .calculatedAt(Instant.now())
+                .build();
+
+        log.info("ESG Score calculated for company {}: {} (Grade: {})", companyId, totalScore, grade);
 
         return scoreRepository.save(score);
     }
 
     public SustainabilityScore getLatestScore(Long companyId) {
+        if (!companyRepository.existsById(companyId)) {
+            throw new ResourceNotFoundException("Company not found with id: " + companyId);
+        }
         return scoreRepository.findTopByCompanyIdOrderByCalculatedAtDesc(companyId)
                 .orElseThrow(() -> new ResourceNotFoundException("No score found for company id: " + companyId));
     }
 
     public List<SustainabilityScore> getScoreHistory(Long companyId) {
+        if (!companyRepository.existsById(companyId)) {
+            throw new ResourceNotFoundException("Company not found with id: " + companyId);
+        }
         return scoreRepository.findByCompanyIdOrderByPeriodStartDesc(companyId);
     }
 
-    // Environment Score (40%)
+    private void validatePeriod(LocalDate start, LocalDate end) {
+        if (start == null || end == null) {
+            throw new BadRequestException("Period start and end dates are required");
+        }
+        if (end.isBefore(start)) {
+            throw new BadRequestException("Period end date cannot be before start date");
+        }
+        if (start.isAfter(LocalDate.now())) {
+            throw new BadRequestException("Period start cannot be in the future");
+        }
+    }
+
     private double calculateEnvironmentScore(Long companyId, LocalDate start, LocalDate end) {
         double co2Score = calculateCo2Score(companyId, start, end);
         double energyScore = calculateEnergyScore(companyId, start, end);
@@ -81,11 +133,14 @@ public class ScoreCalculationService {
 
     private double calculateCo2Score(Long companyId, LocalDate start, LocalDate end) {
         BigDecimal totalCo2 = emissionRepository.getTotalCo2(companyId, start, end);
-        BigDecimal targetCo2 = companyRepository.getCo2Target(companyId);
+        BigDecimal targetCo2 = targetRepository.findTargetValue(companyId, "CO2_EMISSION", start, end).orElse(null);
 
-        if (targetCo2 == null || totalCo2 == null || totalCo2.compareTo(BigDecimal.ZERO) <= 0) return 80.0;
-        if (totalCo2.compareTo(targetCo2) <= 0) return 100.0;
-
+        if (targetCo2 == null || totalCo2 == null || totalCo2.compareTo(BigDecimal.ZERO) <= 0) {
+            return DEFAULT_CO2_SCORE;
+        }
+        if (totalCo2.compareTo(targetCo2) <= 0) {
+            return MAX_SCORE;
+        }
         return (targetCo2.doubleValue() / totalCo2.doubleValue()) * 100;
     }
 
@@ -93,24 +148,36 @@ public class ScoreCalculationService {
         BigDecimal total = energyRepository.getTotalKwh(companyId, start, end);
         BigDecimal renewable = energyRepository.getTotalRenewableKwh(companyId, start, end);
 
-        if (total == null || total.compareTo(BigDecimal.ZERO) == 0) return 70.0;
-        return Math.min(100.0, renewable.doubleValue() / total.doubleValue() * 100);
+        if (total == null || total.compareTo(BigDecimal.ZERO) == 0) {
+            return DEFAULT_SCORE_NO_DATA;
+        }
+
+        BigDecimal safeRenewable = renewable != null ? renewable : BigDecimal.ZERO;
+        return Math.min(MAX_SCORE, safeRenewable.doubleValue() / total.doubleValue() * 100);
     }
 
     private double calculateWaterScore(Long companyId, LocalDate start, LocalDate end) {
         BigDecimal consumed = waterRepository.getTotalConsumedLiters(companyId, start, end);
         BigDecimal recycled = waterRepository.getTotalRecycledLiters(companyId, start, end);
 
-        if (consumed == null || consumed.compareTo(BigDecimal.ZERO) == 0) return 70.0;
-        return Math.min(100.0, recycled.doubleValue() / consumed.doubleValue() * 100);
+        if (consumed == null || consumed.compareTo(BigDecimal.ZERO) == 0) {
+            return DEFAULT_SCORE_NO_DATA;
+        }
+
+        BigDecimal safeRecycled = recycled != null ? recycled : BigDecimal.ZERO;
+        return Math.min(MAX_SCORE, safeRecycled.doubleValue() / consumed.doubleValue() * 100);
     }
 
     private double calculateWasteScore(Long companyId, LocalDate start, LocalDate end) {
         BigDecimal total = wasteRepository.getTotalKg(companyId, start, end);
         BigDecimal recycled = wasteRepository.getTotalRecycledKg(companyId, start, end);
 
-        if (total == null || total.compareTo(BigDecimal.ZERO) == 0) return 70.0;
-        return Math.min(100.0, recycled.doubleValue() / total.doubleValue() * 100);
+        if (total == null || total.compareTo(BigDecimal.ZERO) == 0) {
+            return DEFAULT_SCORE_NO_DATA;
+        }
+
+        BigDecimal safeRecycled = recycled != null ? recycled : BigDecimal.ZERO;
+        return Math.min(MAX_SCORE, safeRecycled.doubleValue() / total.doubleValue() * 100);
     }
 
     private double calculateSocialScore(Long companyId, LocalDate start, LocalDate end) {
@@ -118,10 +185,11 @@ public class ScoreCalculationService {
         double safetyScore = incidents == 0 ? 100.0 : incidents <= 2 ? 80.0 : incidents <= 5 ? 60.0 : 20.0;
 
         double femaleRatio = socialRepository.getAverageFemaleRatio(companyId, start, end);
-        double diversityScore = Math.min(100.0, femaleRatio * 2);
+        double diversityScore = Math.min(MAX_SCORE, femaleRatio * 2);
 
         BigDecimal avgTraining = socialRepository.getAverageTrainingHours(companyId, start, end);
-        double trainingScore = Math.min(100.0, (avgTraining != null ? avgTraining.doubleValue() : 0) / 40.0 * 100);
+        double trainingScore = Math.min(MAX_SCORE,
+                (avgTraining != null ? avgTraining.doubleValue() : 0) / TRAINING_TARGET_HOURS * 100);
 
         BigDecimal avgSatisfaction = socialRepository.getAverageSatisfactionScore(companyId, start, end);
         double satisfactionScore = avgSatisfaction != null ? avgSatisfaction.doubleValue() : 70.0;
@@ -139,7 +207,7 @@ public class ScoreCalculationService {
         score = score - (violations * 5);
         if (ethicsDone) score += 10;
 
-        return Math.max(0.0, Math.min(100.0, score));
+        return Math.max(0.0, Math.min(MAX_SCORE, score));
     }
 
     public String determineGrade(double score) {
