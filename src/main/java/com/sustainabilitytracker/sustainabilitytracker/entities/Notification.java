@@ -1,5 +1,6 @@
 package com.sustainabilitytracker.sustainabilitytracker.entities;
 
+import com.sustainabilitytracker.sustainabilitytracker.enums.NotificationType;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -29,7 +30,8 @@ public class Notification {
     private String message;
 
     @Column(name = "type")
-    private String type;
+    @Enumerated(EnumType.STRING)
+    private NotificationType type;
 
     @ColumnDefault("0")
     @Column(name = "is_read")
