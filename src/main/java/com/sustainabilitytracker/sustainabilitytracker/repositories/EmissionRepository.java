@@ -20,30 +20,24 @@ import java.util.List;
 @Repository
 public interface EmissionRepository extends JpaRepository<EmissionData, Long> {
 
-    boolean existsByDepartmentIdAndRecordedAtAndStatus(
-            Long departmentId,
-            LocalDate recordedAt,
-            DataStatus status
-    );
+    boolean existsByDepartmentIdAndRecordedAtAndStatus(Long departmentId, LocalDate recordedAt, DataStatus status);
 
-    List<EmissionData> findAllByCompany(Company company);
-    List<EmissionData> findAllBySubmittedBy(User submittedBy);
-    List<EmissionData> findAllByDepartment(Department department);
-    List<EmissionData> findAllByCompany_Id(Long companyId);
+    List<EmissionData> findByCompanyId(Long companyId);
 
-    List<EmissionData> findAllByCompanyAndStatusAndSubmittedAtBetween(
-            Company company,
-            DataStatus status,
-            Instant startDate,
-            Instant endDate
-    );
+    List<EmissionData> findBySubmittedById(Long userId);
+
+    List<EmissionData> findByDepartmentId(Long departmentId);
+
+    List<EmissionData> findByCompanyIdAndStatusAndRecordedAtBetween(Long companyId, DataStatus status, LocalDate startDate, LocalDate endDate);
+
+    int countByCompanyIdAndStatus(Long companyId, DataStatus status);
 
     @Query("""
             SELECT
-                SUM(e.co2Amount)  AS totalCO2,
-                SUM(e.ch4Amount)  AS totalCH4,
-                SUM(e.n2oAmount)  AS totalN2O,
-                COUNT(e.id)       AS recordCount
+                SUM(e.co2Amount) AS totalCO2,
+                SUM(e.ch4Amount) AS totalCH4,
+                SUM(e.n2oAmount) AS totalN2O,
+                COUNT(e.id)      AS recordCount
             FROM EmissionData e
             WHERE e.company.id = :companyId
             AND e.recordedAt BETWEEN :start AND :end
@@ -56,26 +50,15 @@ public interface EmissionRepository extends JpaRepository<EmissionData, Long> {
     );
 
     @Query("""
-    SELECT COALESCE(SUM(e.co2Amount), 0)
-    FROM EmissionData e
-    WHERE e.company.id = :companyId
-      AND e.recordedAt BETWEEN :start AND :end
-      AND e.status = 'APPROVED'
-    """)
+            SELECT COALESCE(SUM(e.co2Amount), 0)
+            FROM EmissionData e
+            WHERE e.company.id = :companyId
+            AND e.recordedAt BETWEEN :start AND :end
+            AND e.status = 'APPROVED'
+            """)
     BigDecimal getTotalCo2(
             @Param("companyId") Long companyId,
             @Param("start") LocalDate start,
             @Param("end") LocalDate end
     );
-
-    @Query("""
-            SELECT COUNT(e)
-            FROM EmissionData e
-            WHERE e.company.id = :companyId
-            AND e.status = :status
-            """)
-    int countByCompanyIdAndStatus(@Param("companyId") Long companyId,@Param("status") DataStatus status);
-
-    List<EmissionData> findAllByCompanyIdAndStatusAndRecordedAtBetween(Long companyId, DataStatus dataStatus, LocalDate startDate, LocalDate endDate);
 }
-

@@ -152,6 +152,7 @@ public class EmissionService {
         if (StringUtils.isBlank(reason)) {
             throw new BadRequestException("Rejection reason is required");
         }
+
         if (reason.trim().length() < 10) {
             throw new BadRequestException("Rejection reason must be at least 10 characters");
         }
@@ -173,8 +174,10 @@ public class EmissionService {
     public List<EmissionResponse> getEmissionByCompany(Long companyId) {
 
         User currentUser = authService.getCurrentUser();
-        Company company = companyRepository.findById(companyId)
-                .orElseThrow(() -> new ResourceNotFoundException("Company not found with id: " + companyId));
+
+        companyRepository.findById(companyId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Company not found with id: " + companyId));
 
         if (!hasAccessToCompany(currentUser, companyId)) {
             throw new AccessDeniedException("You do not have access to this company's emissions");
@@ -183,14 +186,18 @@ public class EmissionService {
         List<EmissionData> emissions;
 
         if (currentUser.getRole() == Role.EMPLOYEE) {
-            emissions = emissionRepository.findAllBySubmittedBy(currentUser);
+            emissions = emissionRepository
+                    .findBySubmittedById(currentUser.getId());
+
         } else if (currentUser.getRole() == Role.DEPT_MANAGER) {
             if (currentUser.getDepartment() == null) {
                 throw new BusinessException("Department manager has no assigned department");
             }
-            emissions = emissionRepository.findAllByDepartment(currentUser.getDepartment());
+            emissions = emissionRepository
+                    .findByDepartmentId(currentUser.getDepartment().getId());
+
         } else {
-            emissions = emissionRepository.findAllByCompany_Id(companyId);
+            emissions = emissionRepository.findByCompanyId(companyId);
         }
 
         return emissions.stream()
@@ -199,23 +206,27 @@ public class EmissionService {
     }
 
     @Transactional(readOnly = true)
-    public EmissionSummaryResponse getEmissionSummary(Long companyId, LocalDate startDate, LocalDate endDate) {
+    public EmissionSummaryResponse getEmissionSummary(
+            Long companyId, LocalDate startDate, LocalDate endDate) {
 
         if (startDate == null || endDate == null || endDate.isBefore(startDate)) {
-            throw new BadRequestException("Invalid date range: startDate must be before or equal to endDate");
+            throw new BadRequestException(
+                    "Invalid date range: startDate must be before or equal to endDate");
         }
 
-        Company company = companyRepository.findById(companyId)
-                .orElseThrow(() -> new ResourceNotFoundException("Company not found with id: " + companyId));
+        companyRepository.findById(companyId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Company not found with id: " + companyId));
 
         User currentUser = authService.getCurrentUser();
 
         if (!hasAccessToCompany(currentUser, companyId)) {
-            throw new AccessDeniedException("You do not have access to this company's emission summary");
+            throw new AccessDeniedException(
+                    "You do not have access to this company's emission summary");
         }
 
         List<EmissionData> approvedEmissions = emissionRepository
-                .findAllByCompanyIdAndStatusAndRecordedAtBetween(
+                .findByCompanyIdAndStatusAndRecordedAtBetween(
                         companyId, DataStatus.APPROVED, startDate, endDate);
 
         BigDecimal totalCO2 = approvedEmissions.stream()
@@ -252,7 +263,9 @@ public class EmissionService {
         return user.getCompany() != null && user.getCompany().getId().equals(companyId);
     }
 
-    private void checkSubmissionPermission(User user, Department department, Company company) {
+    private void checkSubmissionPermission(
+            User user, Department department, Company company) {
+
         if (user.getRole() == Role.EMPLOYEE || user.getRole() == Role.DEPT_MANAGER) {
             if (user.getDepartment() == null) {
                 throw new BusinessException("Your account has no assigned department");
@@ -263,7 +276,8 @@ public class EmissionService {
         }
 
         if (user.getRole() == Role.SUSTAINABILITY_MANAGER) {
-            if (user.getCompany() == null || !user.getCompany().getId().equals(company.getId())) {
+            if (user.getCompany() == null ||
+                    !user.getCompany().getId().equals(company.getId())) {
                 throw new AccessDeniedException("You can only submit for your own company");
             }
         }
@@ -277,13 +291,15 @@ public class EmissionService {
         if (user.getRole() == Role.DEPT_MANAGER) {
             return emissionData.getDepartment() != null &&
                     user.getDepartment() != null &&
-                    emissionData.getDepartment().getId().equals(user.getDepartment().getId());
+                    emissionData.getDepartment().getId()
+                            .equals(user.getDepartment().getId());
         }
 
         if (user.getRole() == Role.SUSTAINABILITY_MANAGER) {
             return emissionData.getCompany() != null &&
                     user.getCompany() != null &&
-                    emissionData.getCompany().getId().equals(user.getCompany().getId());
+                    emissionData.getCompany().getId()
+                            .equals(user.getCompany().getId());
         }
 
         return false;
