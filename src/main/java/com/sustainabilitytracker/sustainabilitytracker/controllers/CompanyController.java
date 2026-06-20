@@ -3,7 +3,9 @@ package com.sustainabilitytracker.sustainabilitytracker.controllers;
 import com.sustainabilitytracker.sustainabilitytracker.dtos.request.CompanyRequest;
 import com.sustainabilitytracker.sustainabilitytracker.dtos.response.CompanyResponse;
 import com.sustainabilitytracker.sustainabilitytracker.services.CompanyService;
+import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -12,45 +14,48 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/companies")
-@AllArgsConstructor
+@RequiredArgsConstructor
 public class CompanyController {
+
     private final CompanyService companyService;
 
     @GetMapping
-    public List<CompanyResponse> getAllCompanies(){
-       return companyService.getAllCompanies();
+    public List<CompanyResponse> getAllCompanies() {
+        return companyService.getAllCompanies();
     }
 
     @PostMapping
     public ResponseEntity<CompanyResponse> createCompany(
-            @RequestBody CompanyRequest request,
-            UriComponentsBuilder uriBuilder){
+            @Valid @RequestBody CompanyRequest request,
+            UriComponentsBuilder uriBuilder) {
 
-        var companyResponse = companyService.createCompany(request);
-        var uri = uriBuilder.path("api/v1/companies/{id}").buildAndExpand(companyResponse.getId()).toUri();
+        CompanyResponse companyResponse = companyService.createCompany(request);
 
-       return ResponseEntity.created(uri).body(companyResponse);
+        var uri = uriBuilder.path("/api/v1/companies/{id}")
+                .buildAndExpand(companyResponse.getId())
+                .toUri();
+
+        return ResponseEntity.created(uri).body(companyResponse);
     }
 
     @GetMapping("/{companyId}")
-    public ResponseEntity<CompanyResponse> getCompanies(@PathVariable Long companyId) {
-        return ResponseEntity.ok(companyService.getCompanyById(companyId));
+    public ResponseEntity<CompanyResponse> getCompanyById(@PathVariable Long companyId) {
+        CompanyResponse response = companyService.getCompanyById(companyId);
+        return ResponseEntity.ok(response);
     }
 
     @PutMapping("/{companyId}")
     public ResponseEntity<CompanyResponse> updateCompany(
-            @RequestBody CompanyRequest request,
-            @PathVariable Long companyId) {
+            @PathVariable Long companyId,
+            @Valid @RequestBody CompanyRequest request) {
 
-       CompanyResponse companyResponse = companyService.updateCompany(companyId, request);
-
-       return ResponseEntity.ok(companyResponse);
+        CompanyResponse response = companyService.updateCompany(companyId, request);
+        return ResponseEntity.ok(response);
     }
 
     @DeleteMapping("/{companyId}")
-    public ResponseEntity<Void> deleteCompany(@PathVariable Long companyId) {
+    public ResponseEntity<Void> deactivateCompany(@PathVariable Long companyId) {
         companyService.deactivateCompany(companyId);
         return ResponseEntity.noContent().build();
     }
-
 }
