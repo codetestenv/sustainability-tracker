@@ -80,7 +80,9 @@ public class EmissionController {
 
         LocalDate now = LocalDate.now();
 
-        LocalDate start = (startDate != null) ? startDate : now.minusDays(30);
+        LocalDate start = (startDate != null)
+                ? startDate
+                : now.withDayOfMonth(1);
         LocalDate end = (endDate != null) ? endDate : now;
 
         EmissionSummaryResponse summaryResponse = emissionService
