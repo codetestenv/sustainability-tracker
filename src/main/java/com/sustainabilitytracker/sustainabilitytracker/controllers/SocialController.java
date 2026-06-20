@@ -7,6 +7,7 @@ import com.sustainabilitytracker.sustainabilitytracker.dtos.response.SocialSumma
 import com.sustainabilitytracker.sustainabilitytracker.services.SocialService;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -17,8 +18,8 @@ import java.time.ZoneOffset;
 import java.util.List;
 
 @RestController
-@AllArgsConstructor
 @RequestMapping("/social")
+@RequiredArgsConstructor
 public class SocialController {
 
     private final SocialService socialService;
@@ -29,32 +30,39 @@ public class SocialController {
             UriComponentsBuilder uriBuilder) {
 
         SocialResponse response = socialService.submitSocial(request);
-        var uri = uriBuilder.path("/social/{socialId}")
+
+        var uri = uriBuilder.path("/api/v1/social/{socialId}")
                 .buildAndExpand(response.getId())
                 .toUri();
+
         return ResponseEntity.created(uri).body(response);
     }
 
     @PutMapping("/{socialId}/submit")
     public ResponseEntity<SocialResponse> submitForApproval(@PathVariable Long socialId) {
-        return ResponseEntity.ok(socialService.submitForApproval(socialId));
+        SocialResponse response = socialService.submitForApproval(socialId);
+        return ResponseEntity.ok(response);
     }
 
     @PutMapping("/{socialId}/approve")
     public ResponseEntity<SocialResponse> approveSocial(@PathVariable Long socialId) {
-        return ResponseEntity.ok(socialService.approveSocial(socialId));
+        SocialResponse response = socialService.approveSocial(socialId);
+        return ResponseEntity.ok(response);
     }
 
     @PutMapping("/{socialId}/reject")
     public ResponseEntity<SocialResponse> rejectSocial(
             @PathVariable Long socialId,
             @Valid @RequestBody RejectRequest request) {
-        return ResponseEntity.ok(socialService.rejectSocial(socialId, request.getReason()));
+
+        SocialResponse response = socialService.rejectSocial(socialId, request.getReason());
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/company/{companyId}")
     public ResponseEntity<List<SocialResponse>> getSocialByCompany(@PathVariable Long companyId) {
-        return ResponseEntity.ok(socialService.getSocialByCompany(companyId));
+        List<SocialResponse> responses = socialService.getSocialByCompany(companyId);
+        return ResponseEntity.ok(responses);
     }
 
     @GetMapping("/company/{companyId}/summary")
@@ -64,11 +72,11 @@ public class SocialController {
             @RequestParam(required = false) LocalDate endDate) {
 
         LocalDate now = LocalDate.now();
-        Instant start = startDate != null ? startDate.atStartOfDay(ZoneOffset.UTC).toInstant()
-                : now.minusDays(30).atStartOfDay(ZoneOffset.UTC).toInstant();
-        Instant end = endDate != null ? endDate.atTime(23, 59, 59).toInstant(ZoneOffset.UTC)
-                : now.atTime(23, 59, 59).toInstant(ZoneOffset.UTC);
+        LocalDate start = startDate != null ? startDate : now.minusDays(30);
+        LocalDate end = endDate != null ? endDate : now;
 
-        return ResponseEntity.ok(socialService.getSocialSummary(companyId, startDate, endDate));
+        SocialSummaryResponse summary = socialService.getSocialSummary(companyId, start, end);
+
+        return ResponseEntity.ok(summary);
     }
 }
