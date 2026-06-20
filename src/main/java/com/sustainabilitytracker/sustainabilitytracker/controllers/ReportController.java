@@ -23,7 +23,7 @@ public class ReportController {
             @Valid @RequestBody ReportRequest request,
             @RequestHeader("X-User-Id") Long currentUserId) {
 
-        ReportResponse response = reportService.generateReport(request, currentUserId);
+        ReportResponse response = reportService.generateReport(request);
 
         return ResponseEntity.ok(response);
     }
