@@ -1,6 +1,7 @@
 package com.sustainabilitytracker.sustainabilitytracker.controllers;
 
 import com.sustainabilitytracker.sustainabilitytracker.entities.SustainabilityScore;
+import com.sustainabilitytracker.sustainabilitytracker.enums.PeriodType;
 import com.sustainabilitytracker.sustainabilitytracker.services.ScoreCalculationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -10,31 +11,37 @@ import java.time.LocalDate;
 import java.util.List;
 
 @RestController
-@RequestMapping("/scores")
+@RequestMapping("/api/v1/scores")
 @RequiredArgsConstructor
 public class ScoreCalculationController {
 
     private final ScoreCalculationService scoreCalculationService;
 
+    // CALCULATE & SAVE SCORE
     @PostMapping("/calculate")
     public ResponseEntity<SustainabilityScore> calculateAndSaveScore(
             @RequestParam Long companyId,
             @RequestParam LocalDate periodStart,
-            @RequestParam LocalDate periodEnd) {
+            @RequestParam LocalDate periodEnd,
+            @RequestParam(required = false, defaultValue = "MONTHLY") PeriodType periodType) {
 
         SustainabilityScore score = scoreCalculationService
-                .calculateAndSaveScore(companyId, periodStart, periodEnd);
+                .calculateAndSaveScore(companyId, periodStart, periodEnd, periodType);
 
         return ResponseEntity.ok(score);
     }
 
+    // GET LATEST SCORE
     @GetMapping("/latest/{companyId}")
     public ResponseEntity<SustainabilityScore> getLatestScore(@PathVariable Long companyId) {
-        return ResponseEntity.ok(scoreCalculationService.getLatestScore(companyId));
+        SustainabilityScore score = scoreCalculationService.getLatestScore(companyId);
+        return ResponseEntity.ok(score);
     }
 
+    // GET SCORE HISTORY
     @GetMapping("/history/{companyId}")
     public ResponseEntity<List<SustainabilityScore>> getScoreHistory(@PathVariable Long companyId) {
-        return ResponseEntity.ok(scoreCalculationService.getScoreHistory(companyId));
+        List<SustainabilityScore> history = scoreCalculationService.getScoreHistory(companyId);
+        return ResponseEntity.ok(history);
     }
 }
