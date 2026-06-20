@@ -75,5 +75,7 @@ public interface EmissionRepository extends JpaRepository<EmissionData, Long> {
             AND e.status = :status
             """)
     int countByCompanyIdAndStatus(@Param("companyId") Long companyId,@Param("status") DataStatus status);
+
+    List<EmissionData> findAllByCompanyIdAndStatusAndRecordedAtBetween(Long companyId, DataStatus dataStatus, LocalDate startDate, LocalDate endDate);
 }
 
