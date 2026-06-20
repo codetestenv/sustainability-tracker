@@ -13,6 +13,8 @@ import com.sustainabilitytracker.sustainabilitytracker.mappers.GovernanceMapper;
 import com.sustainabilitytracker.sustainabilitytracker.projection.GovernanceTotalsProjection;
 import com.sustainabilitytracker.sustainabilitytracker.repositories.CompanyRepository;
 import com.sustainabilitytracker.sustainabilitytracker.repositories.GovernanceRepository;
+import com.sustainabilitytracker.sustainabilitytracker.utils.SecurityUtils;
+import io.micrometer.common.util.StringUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -29,14 +31,11 @@ public class GovernanceService {
 
     private final GovernanceRepository governanceRepository;
     private final CompanyRepository companyRepository;
-    private final AuthService authService;
     private final GovernanceMapper governanceMapper;
-//    private final NotificationService notificationService;
-//    private final AuditLogService auditLogService;
-//    private final ScoreService scoreService;
 
     @Transactional
     public GovernanceResponse submitGovernance(GovernanceRequest request) {
+
         Company company = companyRepository.findById(request.getCompanyId())
                 .orElseThrow(() -> new ResourceNotFoundException("Company not found with id: " + request.getCompanyId()));
 
@@ -44,14 +43,15 @@ public class GovernanceService {
             throw new BadRequestException("Company is not active");
         }
 
-        User currentUser = authService.getCurrentUser();
+        User currentUser = SecurityUtils.getCurrentUser();
 
         if (currentUser.getRole() != Role.SUSTAINABILITY_MANAGER) {
             throw new AccessDeniedException("Only Sustainability Manager can submit governance data");
         }
 
         boolean alreadyApproved = governanceRepository
-                .existsByCompanyIdAndRecordedAtAndStatus(company.getId(), request.getRecordedAt(), DataStatus.APPROVED);
+                .existsByCompanyIdAndRecordedAtAndStatus(
+                        company.getId(), request.getRecordedAt(), DataStatus.APPROVED);
 
         if (alreadyApproved) {
             throw new DuplicateResourceException("Governance data already submitted and approved for this date");
@@ -64,18 +64,19 @@ public class GovernanceService {
 
         GovernanceData saved = governanceRepository.save(data);
 
-//        notificationService.notifyByRole("SUSTAINABILITY_MANAGER", "New governance data submitted");
-//        auditLogService.log("SUBMIT_GOVERNANCE", "GOVERNANCE", saved.getId(), null, saved);
+        log.info("Governance data submitted for company: {} by user: {}",
+                company.getId(), currentUser.getId());
 
         return governanceMapper.toResponse(saved);
     }
 
     @Transactional
     public GovernanceResponse submitForApproval(Long governanceId) {
+
         GovernanceData data = governanceRepository.findById(governanceId)
                 .orElseThrow(() -> new ResourceNotFoundException("Governance record not found with id: " + governanceId));
 
-        User currentUser = authService.getCurrentUser();
+        User currentUser = SecurityUtils.getCurrentUser();
 
         if (!data.getSubmittedBy().getId().equals(currentUser.getId())) {
             throw new UnauthorizedException("You can only submit your own records for approval");
@@ -89,17 +90,18 @@ public class GovernanceService {
         data.setSubmittedAt(Instant.now());
 
         GovernanceData updated = governanceRepository.save(data);
-//        notificationService.notifyByRole("SUSTAINABILITY_MANAGER", "Governance record waiting for approval");
 
         return governanceMapper.toResponse(updated);
     }
 
     @Transactional
     public GovernanceResponse approveGovernance(Long governanceId) {
+
         GovernanceData data = governanceRepository.findById(governanceId)
                 .orElseThrow(() -> new ResourceNotFoundException("Governance record not found with id: " + governanceId));
 
-        User approver = authService.getCurrentUser();
+        User approver = SecurityUtils.getCurrentUser();
+
         checkApprovePermission(approver, data);
 
         if (data.getStatus() != DataStatus.PENDING) {
@@ -111,38 +113,51 @@ public class GovernanceService {
         data.setApprovedAt(Instant.now());
 
         GovernanceData updated = governanceRepository.save(data);
-//        scoreService.recalculateForCompany(updated.getCompany().getId());
-//        notificationService.notifyUser(updated.getSubmittedBy().getId(), "Your governance record has been APPROVED");
 
         return governanceMapper.toResponse(updated);
     }
 
     @Transactional
     public GovernanceResponse rejectGovernance(Long governanceId, String reason) {
+
         GovernanceData data = governanceRepository.findById(governanceId)
                 .orElseThrow(() -> new ResourceNotFoundException("Governance record not found with id: " + governanceId));
 
-        User approver = authService.getCurrentUser();
+        User approver = SecurityUtils.getCurrentUser();
+
         checkApprovePermission(approver, data);
+
+        if (StringUtils.isBlank(reason)) {
+            throw new BadRequestException("Rejection reason is required");
+        }
+        if (reason.trim().length() < 10) {
+            throw new BadRequestException("Rejection reason must be at least 10 characters long");
+        }
 
         if (data.getStatus() != DataStatus.PENDING) {
             throw new BadRequestException("Only PENDING records can be rejected");
         }
 
         data.setStatus(DataStatus.REJECTED);
-        data.setRejectionReason(reason);
+        data.setRejectionReason(reason.trim());
 
         GovernanceData updated = governanceRepository.save(data);
-//        notificationService.notifyUser(updated.getSubmittedBy().getId(), "Your governance record has been REJECTED. Reason: " + reason);
 
         return governanceMapper.toResponse(updated);
     }
 
+    @Transactional(readOnly = true)
     public List<GovernanceResponse> getGovernanceByCompany(Long companyId) {
-        User currentUser = authService.getCurrentUser();
 
-        if (!hasCompanyAccess(currentUser, companyId)) {
+        User currentUser = SecurityUtils.getCurrentUser();
+
+        if (!SecurityUtils.hasAccessToCompany(currentUser, companyId)) {
             throw new AccessDeniedException("You do not have access to this company's governance data");
+        }
+
+        // Only Sustainability Manager and above should view governance data
+        if (currentUser.getRole() == Role.EMPLOYEE || currentUser.getRole() == Role.DEPT_MANAGER) {
+            throw new AccessDeniedException("You do not have permission to view governance data");
         }
 
         List<GovernanceData> list = governanceRepository.findByCompanyId(companyId);
@@ -150,7 +165,13 @@ public class GovernanceService {
         return governanceMapper.toResponseList(list);
     }
 
+    @Transactional(readOnly = true)
     public GovernanceSummaryResponse getGovernanceSummary(Long companyId, LocalDate start, LocalDate end) {
+
+        if (!companyRepository.existsById(companyId)) {
+            throw new ResourceNotFoundException("Company not found with id: " + companyId);
+        }
+
         GovernanceTotalsProjection totals = governanceRepository
                 .getTotalsByCompanyAndPeriod(companyId, start, end);
 
@@ -162,16 +183,10 @@ public class GovernanceService {
 
     private void checkApprovePermission(User user, GovernanceData data) {
         switch (user.getRole()) {
-            case SUSTAINABILITY_MANAGER:
-            case ADMIN:
+            case SUSTAINABILITY_MANAGER, ADMIN -> {
                 return;
-            default:
-                throw new UnauthorizedException("You do not have permission to approve this record");
+            }
+            default -> throw new UnauthorizedException("You do not have permission to approve this record");
         }
-    }
-
-    private boolean hasCompanyAccess(User user, Long companyId) {
-        if (user.getRole() == Role.ADMIN || user.getRole() == Role.AUDITOR) return true;
-        return user.getCompany() != null && user.getCompany().getId().equals(companyId);
     }
 }
