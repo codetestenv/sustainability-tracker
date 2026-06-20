@@ -181,4 +181,8 @@ public class ReportService {
             throw new RuntimeException("Failed to read report file", e);
         }
     }
+
+    public ReportResponse getReportById(Long reportId) {
+        return reportMapper.toResponse(reportRepository.getEsgReportById(reportId));
+    }
 }
