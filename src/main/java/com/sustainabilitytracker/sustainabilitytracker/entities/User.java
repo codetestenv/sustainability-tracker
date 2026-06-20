@@ -49,7 +49,8 @@ public class User {
 
     @ColumnDefault("1")
     @Column(name = "is_first_login")
-    private Boolean isFirstLogin;
+    @Builder.Default
+    private Boolean isFirstLogin = true;
 
     @Column(name = "last_login")
     private Instant lastLogin;
@@ -66,7 +67,14 @@ public class User {
 
     public void assignToDepartment(Department department) {
         this.department = department;
-        this.company = department != null ? department.getCompany() : null;
+        if (department != null) {
+            this.company = department.getCompany();
+        }
+    }
+
+    public void assignToCompany(Company company) {
+        this.company = company;
+        this.department = null;
     }
 
 }
