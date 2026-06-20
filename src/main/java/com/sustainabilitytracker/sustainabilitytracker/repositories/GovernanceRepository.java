@@ -15,24 +15,22 @@ import java.util.List;
 @Repository
 public interface GovernanceRepository extends JpaRepository<GovernanceData, Long> {
 
-    boolean existsByCompanyIdAndRecordedAtAndStatus(
-            Long companyId,
-            LocalDate recordedAt,
-            DataStatus status
-    );
+    boolean existsByCompanyIdAndRecordedAtAndStatus(Long companyId, LocalDate recordedAt, DataStatus status);
 
     List<GovernanceData> findByCompanyId(Long companyId);
 
+    int countByCompanyIdAndStatus(Long companyId, DataStatus status);
+
     @Query("""
             SELECT
-                COUNT(g.id)             AS recordCount,
-                AVG(g.complianceScore)  AS averageComplianceScore,
-                SUM(g.policyCount)      AS totalPolicies,
-                SUM(g.violationsCount)  AS totalViolations,
+                COUNT(g.id)              AS recordCount,
+                AVG(g.complianceScore)   AS averageComplianceScore,
+                SUM(g.policyCount)       AS totalPolicies,
+                SUM(g.violationsCount)   AS totalViolations,
                 AVG(g.boardDiversityPct) AS averageBoardDiversity
             FROM GovernanceData g
             WHERE g.company.id = :companyId
-            AND g.status = com.sustainabilitytracker.sustainabilitytracker.enums.DataStatus.APPROVED
+            AND g.status = 'APPROVED'
             AND g.recordedAt BETWEEN :start AND :end
             """)
     GovernanceTotalsProjection getTotalsByCompanyAndPeriod(
@@ -46,7 +44,7 @@ public interface GovernanceRepository extends JpaRepository<GovernanceData, Long
             FROM GovernanceData g
             WHERE g.company.id = :companyId
             AND g.recordedAt BETWEEN :start AND :end
-            AND g.status = com.sustainabilitytracker.sustainabilitytracker.enums.DataStatus.APPROVED
+            AND g.status = 'APPROVED'
             """)
     BigDecimal getAverageComplianceScore(
             @Param("companyId") Long companyId,
@@ -59,7 +57,7 @@ public interface GovernanceRepository extends JpaRepository<GovernanceData, Long
             FROM GovernanceData g
             WHERE g.company.id = :companyId
             AND g.recordedAt BETWEEN :start AND :end
-            AND g.status = com.sustainabilitytracker.sustainabilitytracker.enums.DataStatus.APPROVED
+            AND g.status = 'APPROVED'
             """)
     int getTotalViolations(
             @Param("companyId") Long companyId,
@@ -72,7 +70,7 @@ public interface GovernanceRepository extends JpaRepository<GovernanceData, Long
             FROM GovernanceData g
             WHERE g.company.id = :companyId
             AND g.recordedAt BETWEEN :start AND :end
-            AND g.status = com.sustainabilitytracker.sustainabilitytracker.enums.DataStatus.APPROVED
+            AND g.status = 'APPROVED'
             AND g.ethicsTrainingDone = true
             """)
     boolean hasEthicsTraining(
