@@ -2,8 +2,7 @@ package com.sustainabilitytracker.sustainabilitytracker.entities;
 
 import com.sustainabilitytracker.sustainabilitytracker.enums.PeriodType;
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 import org.hibernate.annotations.ColumnDefault;
 
 import java.math.BigDecimal;
@@ -14,6 +13,9 @@ import java.time.LocalDate;
 @Setter
 @Entity
 @Table(name = "sustainability_scores")
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
 public class SustainabilityScore {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
