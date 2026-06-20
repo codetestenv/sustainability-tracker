@@ -10,8 +10,10 @@ import com.sustainabilitytracker.sustainabilitytracker.enums.AuditAction;
 import com.sustainabilitytracker.sustainabilitytracker.enums.AuditStatus;
 import com.sustainabilitytracker.sustainabilitytracker.enums.Role;
 import com.sustainabilitytracker.sustainabilitytracker.exceptions.AccessDeniedException;
+import com.sustainabilitytracker.sustainabilitytracker.exceptions.BusinessException;
 import com.sustainabilitytracker.sustainabilitytracker.exceptions.ResourceNotFoundException;
 import com.sustainabilitytracker.sustainabilitytracker.mappers.AuditMapper;
+import com.sustainabilitytracker.sustainabilitytracker.mappers.ReportMapper;
 import com.sustainabilitytracker.sustainabilitytracker.repositories.AuditRepository;
 import com.sustainabilitytracker.sustainabilitytracker.repositories.ReportRepository;
 import lombok.RequiredArgsConstructor;
@@ -30,21 +32,15 @@ public class AuditService {
 
     private final ReportRepository reportRepository;
     private final AuditRepository auditRepository;
-    private final AuthService authService;
-//    private final NotificationService notificationService;
     private final AuditMapper auditMapper;
+    private final ReportMapper reportMapper;
+    private final AuthService authService;
 
+    @Transactional(readOnly = true)
     public List<ReportResponse> getReportsForAudit() {
-        User auditor = authService.getCurrentUser();
-
-        if (auditor.getRole() != Role.AUDITOR) {
-            throw new AccessDeniedException("Only auditors can access pending reports for review");
-        }
-
         List<EsgReport> reports = reportRepository.findByAuditStatus(AuditStatus.PENDING);
-        return reports.stream()
-                .map(this::toReportResponse)
-                .collect(Collectors.toList());
+
+        return reportMapper.toResponseList(reports);
     }
 
     @Transactional
@@ -55,10 +51,14 @@ public class AuditService {
 
         User auditor = authService.getCurrentUser();
 
-        if (auditor.getRole() != Role.AUDITOR) {
-            throw new AccessDeniedException("Only auditors can review reports");
+        // Prevent reviewing already finalized reports
+        if (report.getAuditStatus() == AuditStatus.VERIFIED ||
+                report.getAuditStatus() == AuditStatus.REJECTED) {
+            throw new BusinessException("This report has already been finalized with status: "
+                    + report.getAuditStatus());
         }
 
+        // Create audit record
         AuditRecord auditRecord = AuditRecord.builder()
                 .report(report)
                 .auditor(auditor)
@@ -70,35 +70,27 @@ public class AuditService {
 
         AuditRecord savedAudit = auditRepository.save(auditRecord);
 
-        // Update report audit status
-        report.setAuditStatus(getUpdatedAuditStatus(request.getAction()));
+        // Update report status
+        AuditStatus newStatus = getUpdatedAuditStatus(request.getAction());
+        report.setAuditStatus(newStatus);
         reportRepository.save(report);
 
-        // Notifications
-//        notificationService.notifyUser(
-//                report.getCompany().getSustainabilityManagerId(),
-//                "Report has been reviewed: " + request.getAction()
-//        );
+        log.info("Report {} reviewed by auditor {}. New status: {}",
+                reportId, auditor.getId(), newStatus);
 
-        if (request.getAction() == AuditAction.FLAGGED) {
-//            notificationService.notifyAdmins("A report has been flagged for further review");
-        }
-
-        if (request.getAction() == AuditAction.REQUESTED_INFO) {
-//            notificationService.notifyUser(
-//                    report.getGeneratedBy().getId(),
-//                    "Additional information requested for your report"
-//            );
-        }
+        // TODO: Uncomment when NotificationService is ready
+        // notificationService.notifyUser(...);
 
         return auditMapper.toResponse(savedAudit);
     }
 
+    @Transactional(readOnly = true)
     public List<AuditResponse> getAuditHistory(Long reportId) {
-        User currentUser = authService.getCurrentUser();
 
         EsgReport report = reportRepository.findById(reportId)
-                .orElseThrow(() -> new ResourceNotFoundException("Report not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Report not found with id: " + reportId));
+
+        User currentUser = authService.getCurrentUser();
 
         if (!hasAccessToReport(currentUser, report)) {
             throw new AccessDeniedException("You do not have access to this report's audit history");
@@ -119,18 +111,16 @@ public class AuditService {
     }
 
     private boolean hasAccessToReport(User user, EsgReport report) {
-        if (user.getRole() == Role.ADMIN || user.getRole() == Role.AUDITOR) return true;
-        return user.getCompany() != null &&
-                user.getCompany().getId().equals(report.getCompany().getId());
-    }
+        if (user.getRole() == Role.ADMIN || user.getRole() == Role.AUDITOR) {
+            return true;
+        }
 
-    private ReportResponse toReportResponse(EsgReport report) {
-        return ReportResponse.builder()
-                .id(report.getId())
-                .companyId(report.getCompany().getId())
-                .companyName(report.getCompany().getName())
-                .periodStart(report.getPeriodStart())
-                .periodEnd(report.getPeriodEnd())
-                .build();
+        // Only Sustainability Manager of the company can see audit history
+        if (user.getRole() == Role.SUSTAINABILITY_MANAGER) {
+            return user.getCompany() != null &&
+                    user.getCompany().getId().equals(report.getCompany().getId());
+        }
+
+        return false;
     }
 }
