@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import java.util.List;
 
@@ -21,10 +22,17 @@ public class ReportController {
     // GENERATE REPORT
     @PostMapping
     public ResponseEntity<ReportResponse> generateReport(
-            @Valid @RequestBody ReportRequest request) {
+            @Valid @RequestBody ReportRequest request,
+            UriComponentsBuilder uriBuilder) {
 
         ReportResponse response = reportService.generateReport(request);
-        return ResponseEntity.ok(response);
+
+        var uri = uriBuilder
+                .path("/reports/{id}")
+                .buildAndExpand(response.getId())
+                .toUri();
+
+        return ResponseEntity.created(uri).body(response);
     }
 
     // GET REPORTS BY COMPANY
@@ -36,12 +44,34 @@ public class ReportController {
 
     // DOWNLOAD REPORT
     @GetMapping("/{reportId}/download")
-    public ResponseEntity<byte[]> downloadReport(@PathVariable Long reportId) {
+    public ResponseEntity<byte[]> downloadReport(
+            @PathVariable Long reportId) {
+
+        ReportResponse reportInfo = reportService
+                .getReportById(reportId);
+
         byte[] fileBytes = reportService.downloadReport(reportId);
 
+        // Dynamic content type
+        boolean isExcel = "EXCEL".equalsIgnoreCase(
+                reportInfo.getFileFormat()
+        );
+
+        MediaType mediaType = isExcel
+                ? MediaType.parseMediaType(
+                "application/vnd.openxmlformats-" +
+                        "officedocument.spreadsheetml.sheet")
+                : MediaType.APPLICATION_PDF;
+
+        String fileName = isExcel
+                ? "report.xlsx"
+                : "report.pdf";
+
         return ResponseEntity.ok()
-                .header("Content-Disposition", "attachment; filename=report.pdf")
-                .contentType(MediaType.APPLICATION_PDF)
+                .header("Content-Disposition",
+                        "attachment; filename=\"" + fileName + "\"")
+                .contentType(mediaType)
+                .contentLength(fileBytes.length)
                 .body(fileBytes);
     }
 }
