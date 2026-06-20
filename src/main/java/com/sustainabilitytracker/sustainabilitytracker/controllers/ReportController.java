@@ -18,22 +18,23 @@ public class ReportController {
 
     private final ReportService reportService;
 
+    // GENERATE REPORT
     @PostMapping
     public ResponseEntity<ReportResponse> generateReport(
-            @Valid @RequestBody ReportRequest request,
-            @RequestHeader("X-User-Id") Long currentUserId) {
+            @Valid @RequestBody ReportRequest request) {
 
         ReportResponse response = reportService.generateReport(request);
-
         return ResponseEntity.ok(response);
     }
 
+    // GET REPORTS BY COMPANY
     @GetMapping("/company/{companyId}")
     public ResponseEntity<List<ReportResponse>> getReportsByCompany(@PathVariable Long companyId) {
         List<ReportResponse> reports = reportService.getReportsByCompany(companyId);
         return ResponseEntity.ok(reports);
     }
 
+    // DOWNLOAD REPORT
     @GetMapping("/{reportId}/download")
     public ResponseEntity<byte[]> downloadReport(@PathVariable Long reportId) {
         byte[] fileBytes = reportService.downloadReport(reportId);
