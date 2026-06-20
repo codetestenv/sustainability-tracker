@@ -41,13 +41,14 @@ public class Company {
     @Column(name = "email")
     private String email;
 
-    @Column(name = "co2_target")
-    private BigDecimal co2Target;
+    @OneToMany(mappedBy = "company",
+            cascade = CascadeType.ALL,
+            fetch = FetchType.LAZY)
+    private List<Department> departments = new ArrayList<>();
 
-    @OneToMany(mappedBy = "company")
-    List<Department> departments;
-
-    @OneToMany(mappedBy = "company")
+    @OneToMany(mappedBy = "company",
+            cascade = CascadeType.ALL,
+            fetch = FetchType.LAZY)
     private List<User> users = new ArrayList<>();
 
     @Column(name = "phone")
