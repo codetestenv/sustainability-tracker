@@ -7,6 +7,7 @@ import com.sustainabilitytracker.sustainabilitytracker.entities.EsgReport;
 import com.sustainabilitytracker.sustainabilitytracker.entities.SustainabilityScore;
 import com.sustainabilitytracker.sustainabilitytracker.entities.User;
 import com.sustainabilitytracker.sustainabilitytracker.enums.AuditStatus;
+import com.sustainabilitytracker.sustainabilitytracker.enums.PeriodType;
 import com.sustainabilitytracker.sustainabilitytracker.enums.ReportType;
 import com.sustainabilitytracker.sustainabilitytracker.enums.Role;
 import com.sustainabilitytracker.sustainabilitytracker.exceptions.AccessDeniedException;
@@ -22,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -39,7 +41,7 @@ public class ReportService {
     private final String reportStoragePath = "uploads/reports/";
 
     @Transactional
-    public ReportResponse generateReport(ReportRequest request, Long currentUserId) {
+    public ReportResponse generateReport(ReportRequest request) {
 
         Company company = companyRepository.findById(request.getCompanyId())
                 .orElseThrow(() -> new ResourceNotFoundException("Company not found with id: " + request.getCompanyId()));
@@ -53,8 +55,9 @@ public class ReportService {
         LocalDate start = request.getPeriodStart();
         LocalDate end = request.getPeriodEnd();
 
-        // Calculate score
-        SustainabilityScore score = scoreCalculationService.calculateAndSaveScore(company.getId(), start, end);
+        // Calculate latest score
+        SustainabilityScore score = scoreCalculationService
+                .calculateAndSaveScore(company.getId(), start, end, PeriodType.MONTHLY);
 
         // Generate file
         String fileName = generateFileName(company, start, end, request.getFileFormat());
@@ -63,12 +66,12 @@ public class ReportService {
         byte[] fileBytes = generateReportFile(company, start, end, request.getFileFormat());
         saveFileToStorage(fileBytes, filePath);
 
-        // Save report
+        // Save report record
         EsgReport report = EsgReport.builder()
                 .company(company)
                 .score(score)
                 .generatedBy(currentUser)
-                .reportTitle(request.getReportTitle() != null ? request.getReportTitle() : "ESG Report")
+                .reportTitle(request.getReportTitle() != null ? request.getReportTitle() : "ESG Sustainability Report")
                 .reportType(request.getReportType() != null ? request.getReportType() : ReportType.FULL_ESG)
                 .filePath(filePath)
                 .fileFormat(request.getFileFormat() != null ? request.getFileFormat() : "PDF")
@@ -120,9 +123,11 @@ public class ReportService {
     }
 
     private byte[] generateReportFile(Company company, LocalDate start, LocalDate end, String format) {
-        // Implement real PDF/Excel generation (Apache POI or iText)
-        String content = "ESG Sustainability Report\nCompany: " + company.getName() +
-                "\nPeriod: " + start + " to " + end;
+        // TODO: Replace with real PDF/Excel generation (iText or Apache POI)
+        String content = "ESG Sustainability Report\n" +
+                "Company: " + company.getName() + "\n" +
+                "Period: " + start + " to " + end + "\n" +
+                "Generated At: " + Instant.now();
         return content.getBytes();
     }
 
@@ -133,7 +138,7 @@ public class ReportService {
             Files.write(file.toPath(), bytes);
         } catch (IOException e) {
             log.error("Failed to save report file", e);
-            throw new RuntimeException("Failed to save report file");
+            throw new RuntimeException("Failed to save report file", e);
         }
     }
 
@@ -142,7 +147,7 @@ public class ReportService {
             return Files.readAllBytes(new File(filePath).toPath());
         } catch (IOException e) {
             log.error("Failed to read report file", e);
-            throw new RuntimeException("Failed to read report file");
+            throw new RuntimeException("Failed to read report file", e);
         }
     }
 }
