@@ -1,5 +1,6 @@
 package com.sustainabilitytracker.sustainabilitytracker.dtos.request;
 
+import com.sustainabilitytracker.sustainabilitytracker.enums.FileFormat;
 import com.sustainabilitytracker.sustainabilitytracker.enums.ReportType;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
@@ -20,7 +21,8 @@ public class ReportRequest {
 
     private ReportType reportType;
 
-    private String fileFormat; // PDF or EXCEL
+    @NotNull(message = "File format is required")
+    private FileFormat fileFormat;
 
     private String reportTitle;
 }
