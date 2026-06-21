@@ -1,6 +1,5 @@
 package com.sustainabilitytracker.sustainabilitytracker.dtos.response;
 
-import com.sustainabilitytracker.sustainabilitytracker.entities.SustainabilityScore;
 import lombok.Builder;
 import lombok.Data;
 
