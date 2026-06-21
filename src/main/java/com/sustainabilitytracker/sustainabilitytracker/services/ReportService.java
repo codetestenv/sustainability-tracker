@@ -98,7 +98,7 @@ public class ReportService {
             throw new ResourceNotFoundException("Company not found with id: " + companyId);
         }
 
-        List<EsgReport> reports = reportRepository.findByCompanyIdOrderByCreatedAtDesc(companyId);
+        List<EsgReport> reports = reportRepository.findByCompanyIdOrderByGeneratedAtDesc(companyId);
 
         return reportMapper.toResponseList(reports);
     }
