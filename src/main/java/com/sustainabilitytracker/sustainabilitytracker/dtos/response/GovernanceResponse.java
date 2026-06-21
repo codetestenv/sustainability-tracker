@@ -17,7 +17,7 @@ public class GovernanceResponse {
     private Integer violationsCount;
     private BigDecimal boardDiversityPct;
     private Boolean ethicsTrainingDone;
-    private DataStatus status;
+    private String status;
     private String notes;
     private String rejectionReason;
     private LocalDate recordedAt;
