@@ -15,21 +15,21 @@ import java.util.List;
 @Repository
 public interface WaterRepository extends JpaRepository<WaterData, Long> {
 
-    boolean existsByDepartmentIdAndRecordedAtAndStatus(
-            Long departmentId,
-            LocalDate recordedAt,
-            DataStatus status
-    );
+    boolean existsByDepartmentIdAndRecordedAtAndStatus(Long departmentId, LocalDate recordedAt, DataStatus status);
 
     List<WaterData> findByCompanyId(Long companyId);
-    List<WaterData> findBySubmittedBy_Id(Long userId);
+
     List<WaterData> findByDepartmentId(Long departmentId);
+
+    List<WaterData> findBySubmittedById(Long userId);
+
+    int countByCompanyIdAndStatus(Long companyId, DataStatus status);
 
     @Query("""
             SELECT
-                SUM(w.consumedLiters)   AS totalConsumedLiters,
-                SUM(w.recycledLiters)   AS totalRecycledLiters,
-                COUNT(w.id)             AS recordCount,
+                SUM(w.consumedLiters) AS totalConsumedLiters,
+                SUM(w.recycledLiters) AS totalRecycledLiters,
+                COUNT(w.id)           AS recordCount,
                 COALESCE(SUM(w.recycledLiters) * 100.0
                     / NULLIF(SUM(w.consumedLiters), 0), 0) AS recyclingRate
             FROM WaterData w
@@ -67,16 +67,5 @@ public interface WaterRepository extends JpaRepository<WaterData, Long> {
             @Param("companyId") Long companyId,
             @Param("start") LocalDate start,
             @Param("end") LocalDate end
-    );
-
-    @Query("""
-            SELECT COUNT(w)
-            FROM WaterData w
-            WHERE w.company.id = :companyId
-            AND w.status = :status
-            """)
-    int countByCompanyIdAndStatus(
-            @Param("companyId") Long companyId,
-            @Param("status") DataStatus status
     );
 }
