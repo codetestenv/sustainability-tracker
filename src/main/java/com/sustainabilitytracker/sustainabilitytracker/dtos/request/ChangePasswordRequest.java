@@ -10,10 +10,11 @@ public class ChangePasswordRequest {
     @NotBlank
     private String currentPassword;
 
-    @NotNull(message = "Password must be greater than 8.")
-    @Size(min = 8)
+    @NotBlank(message = "New password is required")
+    @Size(min = 8, message = "Password must be at least 8 characters")
     private String newPassword;
 
-    @NotBlank
+    @NotBlank(message = "Please confirm your password")
+    @Size(min = 8, message = "Password must be at least 8 characters")
     private String confirmPassword;
 }
