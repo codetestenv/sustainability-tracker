@@ -2,6 +2,7 @@ package com.sustainabilitytracker.sustainabilitytracker.services;
 
 import com.sustainabilitytracker.sustainabilitytracker.dtos.response.AdminDashboardResponse;
 import com.sustainabilitytracker.sustainabilitytracker.dtos.response.DashboardResponse;
+import com.sustainabilitytracker.sustainabilitytracker.dtos.response.ScoreResponse;
 import com.sustainabilitytracker.sustainabilitytracker.dtos.response.SystemStatsResponse;
 import com.sustainabilitytracker.sustainabilitytracker.entities.Company;
 import com.sustainabilitytracker.sustainabilitytracker.entities.SustainabilityScore;
@@ -91,17 +92,51 @@ public class DashboardService {
         long totalUsers = userRepository.countByIsActiveTrue();
         long totalReports = reportRepository.count();
         long pendingAudits = reportRepository.countByAuditStatus(AuditStatus.PENDING);
-        long activeCompanies = companyRepository.countByIsActiveTrue();
 
-        SustainabilityScore bestScore = scoreRepository.findTopByOrderByTotalScoreDesc().orElse(null);
-        SustainabilityScore worstScore = scoreRepository.findTopByOrderByTotalScoreAsc().orElse(null);
+        SustainabilityScore bestScoreEntity = scoreRepository
+                .findBestLatestScore().orElse(null);
+
+        SustainabilityScore worstScoreEntity = scoreRepository
+                .findWorstLatestScore().orElse(null);
+
+        ScoreResponse bestScore = bestScoreEntity != null
+                ? ScoreResponse.builder()
+                .id(bestScoreEntity.getId())
+                .companyId(bestScoreEntity.getCompany().getId())
+                .companyName(bestScoreEntity.getCompany().getName())
+                .environmentScore(bestScoreEntity.getEnvironmentScore())
+                .socialScore(bestScoreEntity.getSocialScore())
+                .governanceScore(bestScoreEntity.getGovernanceScore())
+                .totalScore(bestScoreEntity.getTotalScore())
+                .grade(bestScoreEntity.getGrade())
+                .periodStart(bestScoreEntity.getPeriodStart())
+                .periodEnd(bestScoreEntity.getPeriodEnd())
+                .calculatedAt(bestScoreEntity.getCalculatedAt())
+                .build()
+                : null;
+
+        ScoreResponse worstScore = worstScoreEntity != null
+                ? ScoreResponse.builder()
+                .id(worstScoreEntity.getId())
+                .companyId(worstScoreEntity.getCompany().getId())
+                .companyName(worstScoreEntity.getCompany().getName())
+                .environmentScore(worstScoreEntity.getEnvironmentScore())
+                .socialScore(worstScoreEntity.getSocialScore())
+                .governanceScore(worstScoreEntity.getGovernanceScore())
+                .totalScore(worstScoreEntity.getTotalScore())
+                .grade(worstScoreEntity.getGrade())
+                .periodStart(worstScoreEntity.getPeriodStart())
+                .periodEnd(worstScoreEntity.getPeriodEnd())
+                .calculatedAt(worstScoreEntity.getCalculatedAt())
+                .build()
+                : null;
 
         SystemStatsResponse stats = SystemStatsResponse.builder()
                 .totalCompanies(totalCompanies)
                 .totalUsers(totalUsers)
                 .totalReports(totalReports)
                 .pendingAudits(pendingAudits)
-                .activeCompanies(activeCompanies)
+                .activeCompanies(totalCompanies)
                 .build();
 
         return AdminDashboardResponse.builder()
