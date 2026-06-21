@@ -19,7 +19,7 @@ public class SocialResponse {
     private Integer safetyIncidents;
     private BigDecimal trainingHours;
     private BigDecimal satisfactionScore;
-    private DataStatus status;
+    private String status;
     private String notes;
     private String rejectionReason;
     private LocalDate recordedAt;
