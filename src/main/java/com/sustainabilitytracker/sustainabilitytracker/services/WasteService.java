@@ -185,7 +185,7 @@ public class WasteService {
         List<WasteData> wasteList;
 
         if (currentUser.getRole() == Role.EMPLOYEE) {
-            wasteList = wasteRepository.findBySubmittedBy_Id(currentUserId);
+            wasteList = wasteRepository.findBySubmittedById(currentUserId);
         } else if (currentUser.getRole() == Role.DEPT_MANAGER) {
             wasteList = wasteRepository.findByDepartmentId(currentUser.getDepartment().getId());
         } else {
