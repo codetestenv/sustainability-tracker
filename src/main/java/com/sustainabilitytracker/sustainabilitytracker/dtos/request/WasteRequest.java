@@ -1,6 +1,7 @@
 package com.sustainabilitytracker.sustainabilitytracker.dtos.request;
 
 import com.sustainabilitytracker.sustainabilitytracker.enums.WasteType;
+import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
@@ -21,10 +22,10 @@ public class WasteRequest {
     @Min(value = 0, message = "Total kg cannot be negative")
     private BigDecimal totalKg;
 
-    @Min(value = 0, message = "Recycled kg cannot be negative")
+    @DecimalMin(value = "0.0", message = "Recycled kg cannot be negative")
     private BigDecimal recycledKg;
 
-    @Min(value = 0, message = "Hazardous kg cannot be negative")
+    @DecimalMin(value = "0.0", message = "Hazardous kg cannot be negative")
     private BigDecimal hazardousKg;
 
     @NotNull(message = "Waste type is required")
