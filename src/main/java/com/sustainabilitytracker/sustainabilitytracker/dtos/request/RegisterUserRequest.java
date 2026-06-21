@@ -9,16 +9,14 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
-//@ValidRegisterUser
 @Data
 public class RegisterUserRequest {
 
     @NotBlank(message = "Full name is required.")
     private String fullName;
 
-    @Email
+    @Email(message = "Invalid email format")
     @NotBlank(message = "Email is required.")
-    @Lowercase(message = "Email must be lowercase.")
     private String email;
 
     @NotBlank(message = "Password is required.")
