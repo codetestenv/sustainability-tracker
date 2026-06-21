@@ -1,9 +1,6 @@
 package com.sustainabilitytracker.sustainabilitytracker.dtos.request;
 
-import jakarta.validation.constraints.DecimalMax;
-import jakarta.validation.constraints.DecimalMin;
-import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.*;
 import lombok.Data;
 
 import java.math.BigDecimal;
@@ -36,5 +33,7 @@ public class GovernanceRequest {
     private String notes;
 
     @NotNull(message = "Recorded date is required")
+    @PastOrPresent(message = "Recorded date cannot be in the future")
     private LocalDate recordedAt;
+
 }
