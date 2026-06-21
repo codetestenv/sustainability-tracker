@@ -8,14 +8,15 @@ import org.mapstruct.ReportingPolicy;
 
 import java.util.List;
 
-@Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
+@Mapper(componentModel = "spring",
+        unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface AuditMapper {
 
-    @Mapping(target = "reportId", source = "report.id")
+    @Mapping(target = "reportId",    source = "report.id")
     @Mapping(target = "reportTitle", source = "report.reportTitle")
-    @Mapping(target = "auditorId", source = "auditor.id")
+    @Mapping(target = "auditorId",   source = "auditor.id")
     @Mapping(target = "auditorName", source = "auditor.fullName")
-    @Mapping(target = "reviewedAt", source = "createdAt")
+    @Mapping(target = "createdAt",   source = "createdAt")
     AuditResponse toResponse(AuditRecord auditRecord);
 
     List<AuditResponse> toResponseList(List<AuditRecord> auditRecords);
