@@ -1,7 +1,5 @@
 package com.sustainabilitytracker.sustainabilitytracker.dtos.response;
 
-import com.sustainabilitytracker.sustainabilitytracker.enums.DataStatus;
-import com.sustainabilitytracker.sustainabilitytracker.enums.WaterSource;
 import lombok.Data;
 
 import java.math.BigDecimal;
@@ -17,8 +15,8 @@ public class WaterResponse {
     private String departmentName;
     private BigDecimal consumedLiters;
     private BigDecimal recycledLiters;
-    private WaterSource source;
-    private DataStatus status;
+    private String source;
+    private String status;
     private String notes;
     private String rejectionReason;
     private LocalDate recordedAt;
