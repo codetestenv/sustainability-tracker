@@ -1,7 +1,7 @@
 package com.sustainabilitytracker.sustainabilitytracker;
 
 import com.sustainabilitytracker.sustainabilitytracker.dtos.request.LoginRequest;
-import com.sustainabilitytracker.sustainabilitytracker.dtos.response.JwtResponse;
+import com.sustainabilitytracker.sustainabilitytracker.dtos.response.LoginResponse;
 import com.sustainabilitytracker.sustainabilitytracker.entities.User;
 import com.sustainabilitytracker.sustainabilitytracker.exceptions.BadRequestException;
 import com.sustainabilitytracker.sustainabilitytracker.repositories.UserRepository;
@@ -56,10 +56,10 @@ class AuthServiceTest {
         when(jwtTokenProvider.generateAccessToken(user)).thenReturn("access.jwt.token");
         when(jwtTokenProvider.generateRefreshToken(user)).thenReturn("refresh.jwt.token");
 
-        JwtResponse jwtResponse = authService.login(request, response);
+        LoginResponse loginResponse = authService.login(request, response);
 
-        assertNotNull(jwtResponse);
-        assertEquals("access.jwt.token", jwtResponse.getAccessToken());
+        assertNotNull(loginResponse);
+        assertEquals("access.jwt.token", loginResponse.getAccessToken());
 
         verify(authenticationManager).authenticate(any(UsernamePasswordAuthenticationToken.class));
         verify(jwtTokenProvider).generateAccessToken(user);
