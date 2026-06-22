@@ -8,31 +8,45 @@ import com.sustainabilitytracker.sustainabilitytracker.repositories.UserReposito
 import com.sustainabilitytracker.sustainabilitytracker.services.AuthService;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 //import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import java.util.List;
+
+@Slf4j
 @RestController
-@AllArgsConstructor
 @RequestMapping("/users")
+@RequiredArgsConstructor
 public class UserController {
+
     private final AuthService authService;
-//    private final PasswordEncoder passwordEncoder;
 
     @GetMapping
-    public ResponseEntity<?> getAllUser(){
-        System.out.println("CLICKED!!");
-        return ResponseEntity.status(HttpStatus.OK).body("OK");
+    public ResponseEntity<List<UserResponse>> getAllUsers() {
+        log.info("Getting all users");
+        return ResponseEntity.ok(authService.getAllUsers());
     }
 
     @PostMapping("/register")
     public ResponseEntity<UserResponse> createUser(
-            UriComponentsBuilder uriBuilder,
-            @Valid @RequestBody RegisterUserRequest request){
-        var userResponse = authService.create(request);
-        var uri = uriBuilder.path("/users/{id}").buildAndExpand(userResponse.getId()).toUri();
+            @Valid @RequestBody RegisterUserRequest request,
+            UriComponentsBuilder uriBuilder) {
+
+        log.info("Registering new user with email: {}",
+                request.getEmail());
+
+        UserResponse userResponse = authService.create(request);
+
+        var uri = uriBuilder
+                .path("/users/{id}")
+                .buildAndExpand(userResponse.getId())
+                .toUri();
+
         return ResponseEntity.created(uri).body(userResponse);
     }
 }
