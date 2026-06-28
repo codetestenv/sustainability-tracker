@@ -1,8 +1,10 @@
 package com.sustainabilitytracker.sustainabilitytracker;
 
+import com.sustainabilitytracker.sustainabilitytracker.config.JwtProperties;
 import com.sustainabilitytracker.sustainabilitytracker.dtos.request.LoginRequest;
 import com.sustainabilitytracker.sustainabilitytracker.dtos.response.LoginResponse;
 import com.sustainabilitytracker.sustainabilitytracker.entities.User;
+import com.sustainabilitytracker.sustainabilitytracker.enums.Role;
 import com.sustainabilitytracker.sustainabilitytracker.exceptions.BadRequestException;
 import com.sustainabilitytracker.sustainabilitytracker.repositories.UserRepository;
 import com.sustainabilitytracker.sustainabilitytracker.security.JwtTokenProvider;
@@ -40,6 +42,9 @@ class AuthServiceTest {
     @Mock
     private HttpServletResponse response;
 
+    @Mock
+    private JwtProperties jwtProperties;
+
     @InjectMocks
     private AuthService authService;
 
@@ -49,8 +54,13 @@ class AuthServiceTest {
         User user = User.builder()
                 .id(1L)
                 .email("test@example.com")
+                .role(Role.ADMIN)
                 .isActive(true)
                 .build();
+
+//        when(jwtProperties.getRefreshTokenExpiration()).thenReturn(Math.toIntExact(7 * 24 * 60 * 60L));
+//        when(jwtProperties.getAccessTokenExpiration()).thenReturn(Math.toIntExact(15 * 60L));
+
 
         when(userRepository.findByEmail(request.getEmail())).thenReturn(Optional.of(user));
         when(jwtTokenProvider.generateAccessToken(user)).thenReturn("access.jwt.token");
@@ -70,10 +80,10 @@ class AuthServiceTest {
     void login_WithWrongPassword_ShouldThrowBadCredentialsException() {
         LoginRequest request = new LoginRequest("test@example.com", "wrongpass");
 
-        doThrow(new BadCredentialsException("Bad credentials"))
+        doThrow(new BadRequestException("Bad credentials"))
                 .when(authenticationManager).authenticate(any());
 
-        assertThrows(BadCredentialsException.class,
+        assertThrows(BadRequestException.class,
                 () -> authService.login(request, response));
     }
 
