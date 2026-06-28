@@ -1,4 +1,0 @@
-spring:
-  datasource:
-    url: ${SPRING_DATASOURCE_URL}
-webisteUrl:
